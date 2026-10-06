@@ -8,7 +8,6 @@ import urllib.request
 import urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# Variables d'environnement / Arguments au run
 PORT = int(os.environ.get("PORT", "8081"))
 SERVICE_NAME = os.environ.get("SERVICE_NAME", "backend-core-api")
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "production")
@@ -40,17 +39,17 @@ class BackendRequestHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self._send_json(200, {"status": "ok"})
 
-    def _fetch_from_game_server(self, endpoint="/api/game/status", method="GET", payload=None):
+    def _forward_to_game(self, endpoint, method="GET", payload=None):
         url = f"{GAME_SERVER_URL}{endpoint}"
         try:
-            req_data = json.dumps(payload).encode('utf-8') if payload else None
+            req_data = json.dumps(payload).encode('utf-8') if payload is not None else None
             req = urllib.request.Request(
                 url,
                 data=req_data,
                 headers={"Content-Type": "application/json"} if req_data else {}
             )
             req.method = method
-            with urllib.request.urlopen(req, timeout=3.0) as resp:
+            with urllib.request.urlopen(req, timeout=3.5) as resp:
                 content = resp.read().decode('utf-8')
                 return json.loads(content), 200
         except urllib.error.URLError as e:
@@ -60,7 +59,6 @@ class BackendRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/health":
-            # Healthcheck : verification locale
             self._send_json(200, {
                 "status": "healthy",
                 "service": SERVICE_NAME,
@@ -72,29 +70,21 @@ class BackendRequestHandler(BaseHTTPRequestHandler):
         elif self.path == "/api/info" or self.path == "/":
             self._send_json(200, {
                 "service": SERVICE_NAME,
-                "role": "Orchestrateur & API Gateway",
+                "role": "Orchestrateur & Passerelle API",
                 "status": "operational",
                 "environment": ENVIRONMENT,
                 "uptime_seconds": round(time.time() - START_TIME, 2),
-                "pid": os.getpid(),
-                "endpoints": [
-                    "/health",
-                    "/api/info",
-                    "/api/game-summary",
-                    "/api/cloud-status"
-                ]
+                "pid": os.getpid()
             })
         elif self.path == "/api/game-summary":
-            # Interrogation du game-server
-            data, code = self._fetch_from_game_server("/api/game/status")
+            data, code = self._forward_to_game("/api/game/status")
             self._send_json(code, {
                 "backend_timestamp": time.time(),
                 "game_server_connected": (code == 200),
                 "game_data": data
             })
         elif self.path == "/api/cloud-status":
-            # Statut agrege de la stack
-            game_data, game_code = self._fetch_from_game_server("/health")
+            game_data, game_code = self._forward_to_game("/health")
             self._send_json(200, {
                 "cloud_cluster": "Docker-Cloud-Cluster-M1",
                 "backend_status": "healthy",
@@ -105,15 +95,21 @@ class BackendRequestHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": "Endpoint introuvable", "path": self.path})
 
     def do_POST(self):
-        if self.path == "/api/action":
-            content_length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else "{}"
-            try:
-                payload = json.loads(body)
-            except Exception:
-                payload = {}
-            # Relayage au serveur de jeu
-            res, code = self._fetch_from_game_server("/api/game/action", method="POST", payload=payload)
+        content_length = int(self.headers.get('Content-Length', 0))
+        body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else "{}"
+        try:
+            payload = json.loads(body)
+        except Exception:
+            payload = {}
+
+        if self.path.startswith("/api/game/"):
+            # Relayage direct au game server
+            endpoint = self.path
+            res, code = self._forward_to_game(endpoint, method="POST", payload=payload)
+            self._send_json(code, res)
+        elif self.path == "/api/action":
+            # Retro-compatibilite
+            res, code = self._forward_to_game("/api/game/miner", method="POST", payload=payload)
             self._send_json(code, res)
         else:
             self._send_json(404, {"error": "Endpoint POST introuvable"})
@@ -129,7 +125,6 @@ httpd = ThreadedHTTPServer(("0.0.0.0", PORT), BackendRequestHandler)
 def shutdown_handler(signum, frame):
     sig_name = "SIGTERM" if signum == signal.SIGTERM else "SIGINT"
     print(f"\n[BACKEND-API] >>> SIGNAL {sig_name} RECU (Signal code: {signum}) <<<", flush=True)
-    print(f"[BACKEND-API] Vidage des queues et fermeture des connexions HTTP...", flush=True)
     
     def do_shutdown():
         httpd.shutdown()
@@ -143,9 +138,7 @@ signal.signal(signal.SIGTERM, shutdown_handler)
 signal.signal(signal.SIGINT, shutdown_handler)
 
 try:
-    print(f"[BACKEND-API] Serveur pret a recevoir des requetes sur le port {PORT}.", flush=True)
+    print(f"[BACKEND-API] Serveur pret sur le port {PORT}.", flush=True)
     httpd.serve_forever()
 except Exception as e:
-    print(f"[BACKEND-API] Erreur d'execution : {e}", flush=True)
-finally:
-    print(f"[BACKEND-API] Terminaison du processus backend.", flush=True)
+    print(f"[BACKEND-API] Erreur : {e}", flush=True)

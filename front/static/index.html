@@ -3,140 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docker Cloud Platform - Master M1</title>
+    <title>PixelQuest: Cloud Heist - Docker Cloud M1</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="header">
         <div class="logo-area">
-            <span class="badge-docker">🐳 DOCKER CLOUD</span>
-            <h1>Plateforme Cloud Personnalisée</h1>
+            <span class="badge-docker">🐳 DOCKER CLOUD PLATFORM</span>
+            <h1>🎮 PixelQuest : Cloud Heist</h1>
         </div>
         <div class="header-status">
-            <span id="global-status-badge" class="badge badge-loading">Initialisation...</span>
+            <span id="global-status-badge" class="badge badge-loading">Connexion...</span>
             <span id="clock" class="clock">--:--:--</span>
         </div>
     </header>
 
     <main class="container">
-        <!-- Section Architecture & Quotas de ressources -->
-        <section class="card architecture-overview">
-            <h2>Architecture Virtualisée & Quotas Alloués</h2>
-            <p class="subtitle">Orchestration multi-conteneurs sans images préfabriquées Docker Hub</p>
-            <div class="services-grid">
-                <!-- Front Card -->
-                <div class="service-box" id="box-front">
-                    <div class="service-header">
-                        <span class="service-icon">🌐</span>
-                        <div>
-                            <h3>front-app</h3>
-                            <span class="port-tag">Port hôte: 8080 (Interne: 8080)</span>
-                        </div>
-                    </div>
-                    <div class="service-body">
-                        <div class="metric-row"><span>Rôle :</span><strong>Dashboard & Interface Web</strong></div>
-                        <div class="metric-row"><span>Quota CPU :</span><code>0.25 core (max)</code></div>
-                        <div class="metric-row"><span>Quota RAM :</span><code>64 Mo (réservé: 32 Mo)</code></div>
-                        <div class="metric-row"><span>OS & Base :</span><code>Alpine 3.20 (non-root: frontuser)</code></div>
-                        <div class="metric-row"><span>Statut :</span><span class="pill pill-green" id="status-front">En ligne</span></div>
-                    </div>
+        <!-- BARRE DE STATUT CLOUD / RESSOURCES -->
+        <section class="card cloud-metrics-bar">
+            <div class="metrics-summary">
+                <div class="metric-pill">
+                    <span class="dot green"></span>
+                    <span>Front (Dashboard) : <strong>0.25 CPU / 64 Mo</strong></span>
                 </div>
-
-                <!-- Back Card -->
-                <div class="service-box" id="box-back">
-                    <div class="service-header">
-                        <span class="service-icon">⚙️</span>
-                        <div>
-                            <h3>back-api</h3>
-                            <span class="port-tag">Port hôte: 8081 (Interne: 8081)</span>
-                        </div>
-                    </div>
-                    <div class="service-body">
-                        <div class="metric-row"><span>Rôle :</span><strong>API Gateway & Orchestration</strong></div>
-                        <div class="metric-row"><span>Quota CPU :</span><code>0.50 core (max)</code></div>
-                        <div class="metric-row"><span>Quota RAM :</span><code>128 Mo (réservé: 64 Mo)</code></div>
-                        <div class="metric-row"><span>OS & Base :</span><code>Alpine 3.20 (non-root: backuser)</code></div>
-                        <div class="metric-row"><span>Statut :</span><span class="pill pill-loading" id="status-back">Vérification...</span></div>
-                    </div>
+                <div class="metric-pill">
+                    <span class="dot green" id="dot-back"></span>
+                    <span>Back (API Gateway) : <strong>0.50 CPU / 128 Mo</strong></span>
                 </div>
-
-                <!-- Game Server Card -->
-                <div class="service-box" id="box-game">
-                    <div class="service-header">
-                        <span class="service-icon">🎮</span>
-                        <div>
-                            <h3>game-server</h3>
-                            <span class="port-tag">Port hôte: 8082 (Interne: 8082)</span>
-                        </div>
-                    </div>
-                    <div class="service-body">
-                        <div class="metric-row"><span>Rôle :</span><strong>Serveur Web Spécialisé (Jeu PixelQuest)</strong></div>
-                        <div class="metric-row"><span>Quota CPU :</span><code>0.50 core (max)</code></div>
-                        <div class="metric-row"><span>Quota RAM :</span><code>128 Mo (réservé: 64 Mo)</code></div>
-                        <div class="metric-row"><span>OS & Base :</span><code>Alpine 3.20 (non-root: gameuser)</code></div>
-                        <div class="metric-row"><span>Statut :</span><span class="pill pill-loading" id="status-game">Vérification...</span></div>
-                    </div>
+                <div class="metric-pill">
+                    <span class="dot green" id="dot-game"></span>
+                    <span>Game Server : <strong>0.50 CPU / 128 Mo</strong></span>
                 </div>
             </div>
         </section>
 
-        <!-- Section Interaction avec le Serveur de Jeu via le Back -->
-        <section class="card game-section">
-            <div class="card-header-flex">
-                <h2>🎮 État du Serveur de Jeu en Temps Réel</h2>
-                <button id="btn-refresh" class="btn btn-secondary">🔄 Actualiser</button>
-            </div>
-            
-            <div class="game-dashboard">
-                <div class="game-info">
-                    <div class="info-block">
-                        <span class="label">Jeu Actif :</span>
-                        <span class="val" id="game-name">Chargement...</span>
+        <!-- ESPACE DE JEU PRINCIPAL -->
+        <div class="game-layout">
+            <!-- COLONNE GAUCHE : LE JEU INTERACTIF -->
+            <section class="card game-main-card">
+                <div class="game-tabs">
+                    <button class="tab-btn active" id="tab-btn-heist">🔓 Mission : Hack The Core</button>
+                    <button class="tab-btn" id="tab-btn-miner">⚡ Arcade : Cloud Data Miner</button>
+                </div>
+
+                <!-- ONGLET 1 : HACK THE CLOUD CORE -->
+                <div class="tab-content" id="tab-content-heist">
+                    <div class="game-setup-panel" id="heist-setup">
+                        <h2>Initialiser une Infiltration</h2>
+                        <p class="subtitle">Le conteneur <code>game-server</code> a chiffré le Core du Cloud. Trouvez la clé secrète avant le verrouillage !</p>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="player-name">Pseudo Hacker :</label>
+                                <input type="text" id="player-name" value="CyberHacker_M1" maxlength="20">
+                            </div>
+                            <div class="form-group">
+                                <label for="game-difficulty">Niveau de Sécurité :</label>
+                                <select id="game-difficulty">
+                                    <option value="easy">Facile (Code 1 à 50 • 10 essais)</option>
+                                    <option value="medium" selected>Moyen (Code 1 à 100 • 7 essais)</option>
+                                    <option value="hard">Difficile (Code 1 à 200 • 5 essais)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-large" id="btn-start-game">🚀 Lancer le Hack</button>
                     </div>
-                    <div class="info-block">
-                        <span class="label">Joueurs Actifs :</span>
-                        <span class="val" id="game-players">-</span>
-                    </div>
-                    <div class="info-block">
-                        <span class="label">Difficulté :</span>
-                        <span class="val" id="game-diff">-</span>
-                    </div>
-                    <div class="info-block">
-                        <span class="label">Uptime Conteneur :</span>
-                        <span class="val" id="game-uptime">-</span>
+
+                    <!-- INTERFACE DE JEU EN COURS -->
+                    <div class="game-play-panel hidden" id="heist-play">
+                        <div class="play-stats-bar">
+                            <div class="stat-badge">Hacker: <strong id="current-player-display">-</strong></div>
+                            <div class="stat-badge">Essais restants: <strong id="tries-left-display" class="highlight-text">-</strong></div>
+                            <div class="stat-badge">Score: <strong id="player-score-display">0</strong> pts</div>
+                        </div>
+
+                        <!-- Écran Terminal du Core -->
+                        <div class="core-terminal">
+                            <div class="core-status" id="core-status-text">SYSTEME EN ATTENTE DE SAISIE...</div>
+                            <div class="core-range-hint" id="core-range-hint">Le code se situe entre 1 et 100</div>
+                            <div class="feedback-banner" id="guess-feedback">Entrez un code ci-dessous</div>
+                        </div>
+
+                        <!-- Contrôles d'entrée -->
+                        <div class="input-controls">
+                            <input type="number" id="guess-input" placeholder="Code secret..." autofocus>
+                            <button class="btn btn-accent" id="btn-submit-guess">Tester la Clé ↵</button>
+                            <button class="btn btn-secondary btn-sm" id="btn-abort-game">Abandonner</button>
+                        </div>
+
+                        <!-- Historique des essais -->
+                        <div class="attempts-history">
+                            <span class="label">Derniers essais :</span>
+                            <div id="attempts-list" class="attempts-chips"></div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="game-action-box">
-                    <h3>Envoyer une action au jeu (Front -> Back -> Game-Server)</h3>
-                    <div class="action-form">
-                        <input type="text" id="player-input" placeholder="Pseudo du joueur" value="Joueur_Cloud_M1">
-                        <input type="number" id="points-input" value="50" min="5" max="500">
-                        <button id="btn-action" class="btn btn-primary">⚡ Envoyer Action</button>
+                <!-- ONGLET 2 : CLOUD DATA MINER & ANTI-DDOS -->
+                <div class="tab-content hidden" id="tab-content-miner">
+                    <div class="miner-header">
+                        <div>
+                            <h2>Collecte de Paquets & Neutralisation DDoS</h2>
+                            <p class="subtitle">Cliquez sur les clusters pour miner des crédits cloud. Neutralisez les alertes rouges !</p>
+                        </div>
+                        <div class="miner-counter">
+                            <span>Crédits générés :</span>
+                            <strong id="miner-total-pts">0 pts</strong>
+                        </div>
                     </div>
-                    <div id="scores-display" class="scores-container">
-                        <strong>Tableau des scores :</strong>
-                        <div id="scores-list" class="scores-chips">Chargement...</div>
+
+                    <div class="server-grid" id="server-cluster-grid">
+                        <!-- 8 serveurs virtuels cliquables -->
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Section Console d'événements & Signaux Docker -->
-        <section class="card terminal-section">
-            <div class="card-header-flex">
-                <h2>📋 Journal des Événements & Contrôles SIGTERM</h2>
-                <button id="btn-clear-logs" class="btn btn-sm">Effacer la console</button>
-            </div>
-            <p class="subtitle">Ce flux démontre la liaison inter-conteneurs et la bonne transmission des signaux.</p>
-            <div class="terminal" id="terminal-logs">
-                <div class="log-line log-info">[SYSTEM] Initialisation de la console de surveillance...</div>
-            </div>
-        </section>
+            <!-- COLONNE DROITE : LEADERBOARD & STATISTIQUES EN TEMPS RÉEL -->
+            <aside class="game-sidebar">
+                <!-- LEADERBOARD DU SERVEUR -->
+                <section class="card leaderboard-card">
+                    <div class="card-header-flex">
+                        <h3>🏆 Classement Cloud (En Direct)</h3>
+                        <button class="btn btn-sm" id="btn-refresh-scores">🔄</button>
+                    </div>
+                    <p class="subtitle">Maintenu en mémoire vive par <code>cloud_game_server</code></p>
+                    <div class="leaderboard-table" id="leaderboard-container">
+                        <div class="loading-text">Chargement des scores...</div>
+                    </div>
+                </section>
+
+                <!-- STATS GLOBALES DU CLUSTER -->
+                <section class="card stats-card">
+                    <h3>📊 Statistiques Moteur de Jeu</h3>
+                    <div class="stats-list">
+                        <div class="stat-line">
+                            <span>Total requêtes de jeu :</span>
+                            <strong id="stat-total-actions">0</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Cores infiltrés avec succès :</span>
+                            <strong id="stat-cores-hacked" class="green-text">0</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Alertes DDoS neutralisées :</span>
+                            <strong id="stat-bugs-eliminated" class="yellow-text">0</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span>Uptime du serveur de jeu :</span>
+                            <strong id="stat-uptime">0s</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CONSOLE DES LOGS SIGNAUX / REQUÊTES -->
+                <section class="card logs-card">
+                    <div class="card-header-flex">
+                        <h4>📋 Logs Flux Inter-Conteneurs</h4>
+                        <button class="btn btn-sm" id="btn-clear-console">Vider</button>
+                    </div>
+                    <div class="mini-terminal" id="mini-terminal">
+                        <div class="log-row info">[SYS] Stack Docker initialisée. Prêt.</div>
+                    </div>
+                </section>
+            </aside>
+        </div>
     </main>
 
     <footer class="footer">
-        <p>Projet Docker Cloud - Master 1 Informatique • Dépendances 100% maîtrisées • Isolation des ressources cgroups</p>
+        <p>Projet Docker Cloud • Architecture 3 conteneurs orchestrés • Communication Front ➔ Back ➔ Game Server</p>
     </footer>
 
     <script src="app.js"></script>

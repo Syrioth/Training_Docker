@@ -46,7 +46,6 @@ class FrontRequestHandler(SimpleHTTPRequestHandler):
                 "pid": os.getpid()
             })
         elif self.path == "/api/proxy/cloud-status":
-            # Proxy vers le backend pour eviter tout probleme de CORS cote navigateur
             try:
                 with urllib.request.urlopen(f"{BACKEND_URL}/api/cloud-status", timeout=2.5) as resp:
                     data = json.loads(resp.read().decode('utf-8'))
@@ -61,24 +60,33 @@ class FrontRequestHandler(SimpleHTTPRequestHandler):
             except Exception as e:
                 self._send_json(502, {"error": "Backend ou game-server injoignable", "details": str(e)})
         else:
-            # Service des fichiers statiques
             super().do_GET()
 
     def do_POST(self):
-        if self.path == "/api/proxy/game-action":
-            content_length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else "{}"
+        content_length = int(self.headers.get('Content-Length', 0))
+        body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else "{}"
+
+        # Proxy dynamique des requetes de jeu vers le back
+        if self.path.startswith("/api/proxy/game-"):
+            game_endpoint = self.path.replace("/api/proxy/game-", "/api/game/")
+            # Exemple : /api/proxy/game-start -> /api/game/start
             try:
                 req = urllib.request.Request(
-                    f"{BACKEND_URL}/api/action",
+                    f"{BACKEND_URL}{game_endpoint}",
                     data=body.encode('utf-8'),
                     headers={"Content-Type": "application/json"}
                 )
-                with urllib.request.urlopen(req, timeout=3.0) as resp:
+                with urllib.request.urlopen(req, timeout=3.5) as resp:
                     data = json.loads(resp.read().decode('utf-8'))
-                    self._send_json(200, data)
+                    self._send_json(resp.status, data)
+            except urllib.error.HTTPError as e:
+                try:
+                    err_data = json.loads(e.read().decode('utf-8'))
+                    self._send_json(e.code, err_data)
+                except Exception:
+                    self._send_json(e.code, {"error": f"Erreur HTTP {e.code}"})
             except Exception as e:
-                self._send_json(502, {"error": "Erreur relai action", "details": str(e)})
+                self._send_json(502, {"error": "Erreur relai proxy", "details": str(e)})
         else:
             self._send_json(404, {"error": "Endpoint non trouve"})
 
@@ -93,7 +101,6 @@ httpd = ThreadedHTTPServer(("0.0.0.0", PORT), FrontRequestHandler)
 def shutdown_handler(signum, frame):
     sig_name = "SIGTERM" if signum == signal.SIGTERM else "SIGINT"
     print(f"\n[FRONTEND-UI] >>> SIGNAL {sig_name} RECU (Signal code: {signum}) <<<", flush=True)
-    print(f"[FRONTEND-UI] Fermeture des canaux web et arret...", flush=True)
     
     def do_shutdown():
         httpd.shutdown()
@@ -110,6 +117,4 @@ try:
     print(f"[FRONTEND-UI] Interface Web prete sur le port {PORT}.", flush=True)
     httpd.serve_forever()
 except Exception as e:
-    print(f"[FRONTEND-UI] Erreur d'execution : {e}", flush=True)
-finally:
-    print(f"[FRONTEND-UI] Arret complet du frontend.", flush=True)
+    print(f"[FRONTEND-UI] Erreur : {e}", flush=True)

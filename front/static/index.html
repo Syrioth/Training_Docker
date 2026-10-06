@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Cloud Platform - Master M1</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="logo-area">
+            <span class="badge-docker">🐳 DOCKER CLOUD</span>
+            <h1>Plateforme Cloud Personnalisée</h1>
+        </div>
+        <div class="header-status">
+            <span id="global-status-badge" class="badge badge-loading">Initialisation...</span>
+            <span id="clock" class="clock">--:--:--</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Section Architecture & Quotas de ressources -->
+        <section class="card architecture-overview">
+            <h2>Architecture Virtualisée & Quotas Alloués</h2>
+            <p class="subtitle">Orchestration multi-conteneurs sans images préfabriquées Docker Hub</p>
+            <div class="services-grid">
+                <!-- Front Card -->
+                <div class="service-box" id="box-front">
+                    <div class="service-header">
+                        <span class="service-icon">🌐</span>
+                        <div>
+                            <h3>front-app</h3>
+                            <span class="port-tag">Port hôte: 8080 (Interne: 8080)</span>
+                        </div>
+                    </div>
+                    <div class="service-body">
+                        <div class="metric-row"><span>Rôle :</span><strong>Dashboard & Interface Web</strong></div>
+                        <div class="metric-row"><span>Quota CPU :</span><code>0.25 core (max)</code></div>
+                        <div class="metric-row"><span>Quota RAM :</span><code>64 Mo (réservé: 32 Mo)</code></div>
+                        <div class="metric-row"><span>OS & Base :</span><code>Alpine 3.20 (non-root: frontuser)</code></div>
+                        <div class="metric-row"><span>Statut :</span><span class="pill pill-green" id="status-front">En ligne</span></div>
+                    </div>
+                </div>
+
+                <!-- Back Card -->
+                <div class="service-box" id="box-back">
+                    <div class="service-header">
+                        <span class="service-icon">⚙️</span>
+                        <div>
+                            <h3>back-api</h3>
+                            <span class="port-tag">Port hôte: 8081 (Interne: 8081)</span>
+                        </div>
+                    </div>
+                    <div class="service-body">
+                        <div class="metric-row"><span>Rôle :</span><strong>API Gateway & Orchestration</strong></div>
+                        <div class="metric-row"><span>Quota CPU :</span><code>0.50 core (max)</code></div>
+                        <div class="metric-row"><span>Quota RAM :</span><code>128 Mo (réservé: 64 Mo)</code></div>
+                        <div class="metric-row"><span>OS & Base :</span><code>Alpine 3.20 (non-root: backuser)</code></div>
+                        <div class="metric-row"><span>Statut :</span><span class="pill pill-loading" id="status-back">Vérification...</span></div>
+                    </div>
+                </div>
+
+                <!-- Game Server Card -->
+                <div class="service-box" id="box-game">
+                    <div class="service-header">
+                        <span class="service-icon">🎮</span>
+                        <div>
+                            <h3>game-server</h3>
+                            <span class="port-tag">Port hôte: 8082 (Interne: 8082)</span>
+                        </div>
+                    </div>
+                    <div class="service-body">
+                        <div class="metric-row"><span>Rôle :</span><strong>Serveur Web Spécialisé (Jeu PixelQuest)</strong></div>
+                        <div class="metric-row"><span>Quota CPU :</span><code>0.50 core (max)</code></div>
+                        <div class="metric-row"><span>Quota RAM :</span><code>128 Mo (réservé: 64 Mo)</code></div>
+                        <div class="metric-row"><span>OS & Base :</span><code>Alpine 3.20 (non-root: gameuser)</code></div>
+                        <div class="metric-row"><span>Statut :</span><span class="pill pill-loading" id="status-game">Vérification...</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Interaction avec le Serveur de Jeu via le Back -->
+        <section class="card game-section">
+            <div class="card-header-flex">
+                <h2>🎮 État du Serveur de Jeu en Temps Réel</h2>
+                <button id="btn-refresh" class="btn btn-secondary">🔄 Actualiser</button>
+            </div>
+            
+            <div class="game-dashboard">
+                <div class="game-info">
+                    <div class="info-block">
+                        <span class="label">Jeu Actif :</span>
+                        <span class="val" id="game-name">Chargement...</span>
+                    </div>
+                    <div class="info-block">
+                        <span class="label">Joueurs Actifs :</span>
+                        <span class="val" id="game-players">-</span>
+                    </div>
+                    <div class="info-block">
+                        <span class="label">Difficulté :</span>
+                        <span class="val" id="game-diff">-</span>
+                    </div>
+                    <div class="info-block">
+                        <span class="label">Uptime Conteneur :</span>
+                        <span class="val" id="game-uptime">-</span>
+                    </div>
+                </div>
+
+                <div class="game-action-box">
+                    <h3>Envoyer une action au jeu (Front -> Back -> Game-Server)</h3>
+                    <div class="action-form">
+                        <input type="text" id="player-input" placeholder="Pseudo du joueur" value="Joueur_Cloud_M1">
+                        <input type="number" id="points-input" value="50" min="5" max="500">
+                        <button id="btn-action" class="btn btn-primary">⚡ Envoyer Action</button>
+                    </div>
+                    <div id="scores-display" class="scores-container">
+                        <strong>Tableau des scores :</strong>
+                        <div id="scores-list" class="scores-chips">Chargement...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Console d'événements & Signaux Docker -->
+        <section class="card terminal-section">
+            <div class="card-header-flex">
+                <h2>📋 Journal des Événements & Contrôles SIGTERM</h2>
+                <button id="btn-clear-logs" class="btn btn-sm">Effacer la console</button>
+            </div>
+            <p class="subtitle">Ce flux démontre la liaison inter-conteneurs et la bonne transmission des signaux.</p>
+            <div class="terminal" id="terminal-logs">
+                <div class="log-line log-info">[SYSTEM] Initialisation de la console de surveillance...</div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Projet Docker Cloud - Master 1 Informatique • Dépendances 100% maîtrisées • Isolation des ressources cgroups</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

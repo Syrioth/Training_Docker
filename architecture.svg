@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0b1120; }
+      .title { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 22px; font-weight: bold; fill: #38bdf8; }
+      .subtitle { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; fill: #94a3b8; }
+      .box-host { fill: #0f172a; stroke: #38bdf8; stroke-width: 2; rx: 8; }
+      .box-net { fill: #131d35; stroke: #2563eb; stroke-width: 2; stroke-dasharray: 6 4; rx: 12; }
+      .box-container { fill: #1e293b; stroke: #475569; stroke-width: 1.5; rx: 8; }
+      .box-head { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 16px; font-weight: bold; fill: #f8fafc; }
+      .box-text { font-family: 'Consolas', monospace; font-size: 12px; fill: #cbd5e1; }
+      .badge-green { fill: #064e3b; stroke: #10b981; stroke-width: 1; rx: 4; }
+      .badge-text { font-family: 'Segoe UI', sans-serif; font-size: 11px; font-weight: bold; fill: #34d399; }
+      .badge-yellow { fill: #78350f; stroke: #f59e0b; stroke-width: 1; rx: 4; }
+      .badge-yellow-text { font-family: 'Segoe UI', sans-serif; font-size: 11px; font-weight: bold; fill: #fbbf24; }
+      .arrow { stroke: #38bdf8; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+      .arrow-dep { stroke: #10b981; stroke-width: 2; stroke-dasharray: 5 4; marker-end: url(#arrowhead-green); fill: none; }
+      .arrow-sig { stroke: #ef4444; stroke-width: 1.5; stroke-dasharray: 4 4; marker-end: url(#arrowhead-red); fill: none; }
+      .flow-label { font-family: 'Segoe UI', sans-serif; font-size: 11px; fill: #93c5fd; font-weight: bold; }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#38bdf8" />
+    </marker>
+    <marker id="arrowhead-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981" />
+    </marker>
+    <marker id="arrowhead-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ef4444" />
+    </marker>
+  </defs>
+
+  <!-- Arrière-plan général -->
+  <rect width="1000" height="700" class="bg" />
+
+  <!-- Titre -->
+  <text x="40" y="45" class="title">☁️ Architecture Docker Cloud - Master 1 Informatique</text>
+  <text x="40" y="68" class="subtitle">Isolation réseau, ordonnancement par healthchecks et quotas de ressources strictes</text>
+
+  <!-- Cadre Host Machine -->
+  <rect x="40" y="95" width="920" height="90" class="box-host" />
+  <text x="60" y="125" class="box-head">🖥️ Machine Hôte &amp; Clients Externes</text>
+  <rect x="60" y="140" width="260" height="32" rx="4" fill="#1e293b" />
+  <text x="75" y="161" class="box-text">🌐 Navigateur Web (Client HTTP)</text>
+
+  <rect x="360" y="140" width="260" height="32" rx="4" fill="#1e293b" />
+  <text x="375" y="161" class="box-text">📡 API Gateway Client (Tests / CLI)</text>
+
+  <rect x="660" y="140" width="260" height="32" rx="4" fill="#1e293b" />
+  <text x="675" y="161" class="box-text">🎮 Serveur Jeu Direct (Monitoring)</text>
+
+  <!-- Réseau Docker isolé -->
+  <rect x="40" y="215" width="920" height="425" class="box-net" />
+  <text x="60" y="242" class="box-head" fill="#60a5fa">🔗 Réseau Virtuel Bridge Isolé : docker_cloud_net (172.x.x.x)</text>
+
+  <!-- Conteneur 1 : Front -->
+  <g transform="translate(60, 265)">
+    <rect width="260" height="345" class="box-container" />
+    <text x="15" y="30" class="box-head">1. front-app</text>
+    <rect x="15" y="42" width="115" height="20" class="badge-green" />
+    <text x="22" y="56" class="badge-text">STATUS: HEALTHY</text>
+
+    <text x="15" y="85" class="box-text" fill="#93c5fd">Rôle : Dashboard Web</text>
+    <text x="15" y="110" class="box-text">Base : Alpine 3.20</text>
+    <text x="15" y="130" class="box-text">User : frontuser (1003)</text>
+    <text x="15" y="150" class="box-text">Port interne : 8080</text>
+    <text x="15" y="170" class="box-text">Port hôte : 8080:8080</text>
+    
+    <line x1="15" y1="190" x2="245" y2="190" stroke="#334155" />
+    <text x="15" y="210" class="box-text" fill="#facc15">Limites Ressources :</text>
+    <text x="15" y="230" class="box-text">• Max CPU : 0.25 core</text>
+    <text x="15" y="250" class="box-text">• Max RAM : 64 Mo</text>
+    <text x="15" y="270" class="box-text">• Réservation : 32 Mo</text>
+    
+    <line x1="15" y1="285" x2="245" y2="285" stroke="#334155" />
+    <text x="15" y="305" class="box-text" fill="#f87171">SIGTERM : Géré (PID 1)</text>
+    <text x="15" y="325" class="box-text" fill="#4ade80">Dépend de : back (healthy)</text>
+  </g>
+
+  <!-- Conteneur 2 : Back -->
+  <g transform="translate(370, 265)">
+    <rect width="260" height="345" class="box-container" />
+    <text x="15" y="30" class="box-head">2. back-api</text>
+    <rect x="15" y="42" width="115" height="20" class="badge-green" />
+    <text x="22" y="56" class="badge-text">STATUS: HEALTHY</text>
+
+    <text x="15" y="85" class="box-text" fill="#93c5fd">Rôle : API Gateway</text>
+    <text x="15" y="110" class="box-text">Base : Alpine 3.20</text>
+    <text x="15" y="130" class="box-text">User : backuser (1002)</text>
+    <text x="15" y="150" class="box-text">Port interne : 8081</text>
+    <text x="15" y="170" class="box-text">Port hôte : 8081:8081</text>
+    
+    <line x1="15" y1="190" x2="245" y2="190" stroke="#334155" />
+    <text x="15" y="210" class="box-text" fill="#facc15">Limites Ressources :</text>
+    <text x="15" y="230" class="box-text">• Max CPU : 0.50 core</text>
+    <text x="15" y="250" class="box-text">• Max RAM : 128 Mo</text>
+    <text x="15" y="270" class="box-text">• Réservation : 64 Mo</text>
+    
+    <line x1="15" y1="285" x2="245" y2="285" stroke="#334155" />
+    <text x="15" y="305" class="box-text" fill="#f87171">SIGTERM : Géré (PID 1)</text>
+    <text x="15" y="325" class="box-text" fill="#4ade80">Dépend de : game (healthy)</text>
+  </g>
+
+  <!-- Conteneur 3 : Game Server -->
+  <g transform="translate(680, 265)">
+    <rect width="260" height="345" class="box-container" />
+    <text x="15" y="30" class="box-head">3. game-server</text>
+    <rect x="15" y="42" width="115" height="20" class="badge-green" />
+    <text x="22" y="56" class="badge-text">STATUS: HEALTHY</text>
+
+    <text x="15" y="85" class="box-text" fill="#93c5fd">Rôle : Serveur Jeu Pixel</text>
+    <text x="15" y="110" class="box-text">Base : Alpine 3.20</text>
+    <text x="15" y="130" class="box-text">User : gameuser (1001)</text>
+    <text x="15" y="150" class="box-text">Port interne : 8082</text>
+    <text x="15" y="170" class="box-text">Port hôte : 8082:8082</text>
+    
+    <line x1="15" y1="190" x2="245" y2="190" stroke="#334155" />
+    <text x="15" y="210" class="box-text" fill="#facc15">Limites Ressources :</text>
+    <text x="15" y="230" class="box-text">• Max CPU : 0.50 core</text>
+    <text x="15" y="250" class="box-text">• Max RAM : 128 Mo</text>
+    <text x="15" y="270" class="box-text">• Réservation : 64 Mo</text>
+    
+    <line x1="15" y1="285" x2="245" y2="285" stroke="#334155" />
+    <text x="15" y="305" class="box-text" fill="#f87171">SIGTERM : Géré (PID 1)</text>
+    <text x="15" y="325" class="box-text" fill="#4ade80">Démarre en premier (1er)</text>
+  </g>
+
+  <!-- Lignes de flux HTTP hôte vers conteneurs -->
+  <path d="M 190 172 L 190 265" class="arrow" />
+  <text x="195" y="200" class="flow-label">:8080</text>
+
+  <path d="M 490 172 L 490 265" class="arrow" />
+  <text x="495" y="200" class="flow-label">:8081</text>
+
+  <path d="M 790 172 L 790 265" class="arrow" />
+  <text x="795" y="200" class="flow-label">:8082</text>
+
+  <!-- Communication interne Front -> Back -->
+  <path d="M 320 380 L 370 380" class="arrow" />
+  <text x="325" y="372" class="flow-label">HTTP</text>
+
+  <!-- Communication interne Back -> Game -->
+  <path d="M 630 380 L 680 380" class="arrow" />
+  <text x="635" y="372" class="flow-label">HTTP</text>
+
+  <!-- Dépendance d'ordre de démarrage (Game -> Back -> Front) -->
+  <path d="M 680 580 C 655 580, 645 580, 630 580" class="arrow-dep" />
+  <path d="M 370 580 C 345 580, 335 580, 320 580" class="arrow-dep" />
+  <text x="480" y="658" class="badge-text" text-anchor="middle">🟩 Dépendance &amp; Ordre de démarrage séquentiel : Game-Server (Healthy) ➔ Back-API (Healthy) ➔ Front-Dashboard</text>
+
+  <!-- Légende en bas -->
+  <rect x="40" y="650" width="920" height="35" rx="6" fill="#0f172a" stroke="#334155" />
+  <text x="60" y="672" class="subtitle">🔵 Flux Requêtes HTTP  |  🟢 Dépendance séquentielle de santé (depends_on condition: service_healthy)  |  🔴 Signal de fermeture propre SIGTERM</text>
+</svg>

@@ -1,0 +1,137 @@
+# ==============================================================================
+# PROJET DOCKER CLOUD - MASTER M1
+# Orchestration Multi-Conteneurs avec Images Personnalisées & Quotas de Ressources
+# ==============================================================================
+
+services:
+
+  # ----------------------------------------------------------------------------
+  # 1. SERVEUR WEB SPÉCIALISÉ : game-server (Serveur de Jeu PixelQuest)
+  # Ce conteneur démarre en premier. Il gère l'état et la logique du jeu.
+  # ----------------------------------------------------------------------------
+  game-server:
+    build:
+      context: ./game-server
+      dockerfile: Dockerfile
+      args:
+        DEFAULT_PORT: 8082
+    container_name: cloud_game_server
+    restart: unless-stopped
+    stop_signal: SIGTERM
+    stop_grace_period: 10s
+    environment:
+      - PORT=8082
+      - GAME_NAME=${GAME_NAME:-PixelQuest_Cloud_M1}
+      - MAX_PLAYERS=${MAX_PLAYERS:-32}
+      - DIFFICULTY=${DIFFICULTY:-hard}
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "${GAME_HOST_PORT:-8082}:8082"
+    networks:
+      - cloud-network
+    deploy:
+      resources:
+        limits:
+          cpus: '${GAME_CPU_LIMIT:-0.50}'
+          memory: ${GAME_MEM_LIMIT:-128M}
+        reservations:
+          cpus: '0.10'
+          memory: ${GAME_MEM_RESERVATION:-64M}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 2s
+
+  # ----------------------------------------------------------------------------
+  # 2. BACK-END : back-api (Passerelle API & Orchestration)
+  # Dépend directement de game-server et attend que son healthcheck soit valide.
+  # ----------------------------------------------------------------------------
+  back:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+      args:
+        DEFAULT_PORT: 8081
+    container_name: cloud_back_api
+    restart: unless-stopped
+    stop_signal: SIGTERM
+    stop_grace_period: 10s
+    environment:
+      - PORT=8081
+      - SERVICE_NAME=backend-core-api
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - GAME_SERVER_URL=http://game-server:8082
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "${BACK_HOST_PORT:-8081}:8081"
+    networks:
+      - cloud-network
+    depends_on:
+      game-server:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '${BACK_CPU_LIMIT:-0.50}'
+          memory: ${BACK_MEM_LIMIT:-128M}
+        reservations:
+          cpus: '0.10'
+          memory: ${BACK_MEM_RESERVATION:-64M}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 2s
+
+  # ----------------------------------------------------------------------------
+  # 3. FRONT-END : front-app (Interface Web & Dashboard Cloud)
+  # Dépend de back-api et attend que son healthcheck soit valide.
+  # ----------------------------------------------------------------------------
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+      args:
+        DEFAULT_PORT: 8080
+    container_name: cloud_front_dashboard
+    restart: unless-stopped
+    stop_signal: SIGTERM
+    stop_grace_period: 10s
+    environment:
+      - PORT=8080
+      - BACKEND_URL=http://back:8081
+      - APP_TITLE=Docker Cloud Platform M1
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "${FRONT_HOST_PORT:-8080}:8080"
+    networks:
+      - cloud-network
+    depends_on:
+      back:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '${FRONT_CPU_LIMIT:-0.25}'
+          memory: ${FRONT_MEM_LIMIT:-64M}
+        reservations:
+          cpus: '0.05'
+          memory: ${FRONT_MEM_RESERVATION:-32M}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 2s
+
+# ------------------------------------------------------------------------------
+# Configuration Réseau : Réseau Bridge isolé pour le Cloud
+# ------------------------------------------------------------------------------
+networks:
+  cloud-network:
+    driver: bridge
+    name: docker_cloud_net

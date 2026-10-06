@@ -3,176 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PixelQuest: Cloud Heist - Docker Cloud M1</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Projet Docker Cloud - Hello World</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --success: #10b981;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+        h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #fff; }
+        .subtitle { color: var(--text-muted); font-size: 0.95rem; }
+        .grid {
+            display: grid;
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: monospace;
+        }
+        .msg-box {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.95rem;
+            color: var(--success);
+        }
+        .meta-list {
+            list-style: none;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+        .meta-list li { margin-bottom: 0.2rem; }
+        .chain-status {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--success);
+        }
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 2rem;
+        }
+    </style>
 </head>
 <body>
-    <header class="header">
-        <div class="logo-area">
-            <span class="badge-docker">🐳 DOCKER CLOUD PLATFORM</span>
-            <h1>🎮 PixelQuest : Cloud Heist</h1>
-        </div>
-        <div class="header-status">
-            <span id="global-status-badge" class="badge badge-loading">Connexion...</span>
-            <span id="clock" class="clock">--:--:--</span>
-        </div>
-    </header>
+    <div class="container">
+        <header>
+            <h1>☁️ Projet Docker Cloud — Master 1</h1>
+            <p class="subtitle">Architecture virtualisée multi-conteneurs • 0 image Docker Hub • Hello World</p>
+        </header>
 
-    <main class="container">
-        <!-- BARRE DE STATUT CLOUD / RESSOURCES -->
-        <section class="card cloud-metrics-bar">
-            <div class="metrics-summary">
-                <div class="metric-pill">
-                    <span class="dot green"></span>
-                    <span>Front (Dashboard) : <strong>0.25 CPU / 64 Mo</strong></span>
+        <div class="grid">
+            <!-- 1. Front-End -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🌐 1. Conteneur Front-End</h2>
+                    <span class="badge">Port 8080:8080</span>
                 </div>
-                <div class="metric-pill">
-                    <span class="dot green" id="dot-back"></span>
-                    <span>Back (API Gateway) : <strong>0.50 CPU / 128 Mo</strong></span>
-                </div>
-                <div class="metric-pill">
-                    <span class="dot green" id="dot-game"></span>
-                    <span>Game Server : <strong>0.50 CPU / 128 Mo</strong></span>
-                </div>
+                <div class="msg-box">Hello World from Front-End Container!</div>
+                <ul class="meta-list">
+                    <li>• Rôle : Serveur Web HTTP & Dashboard</li>
+                    <li>• Quota : 0.25 CPU | 64 Mo RAM (non-root: frontuser)</li>
+                </ul>
             </div>
-        </section>
 
-        <!-- ESPACE DE JEU PRINCIPAL -->
-        <div class="game-layout">
-            <!-- COLONNE GAUCHE : LE JEU INTERACTIF -->
-            <section class="card game-main-card">
-                <div class="game-tabs">
-                    <button class="tab-btn active" id="tab-btn-heist">🔓 Mission : Hack The Core</button>
-                    <button class="tab-btn" id="tab-btn-miner">⚡ Arcade : Cloud Data Miner</button>
+            <!-- 2. Back-End -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>⚙️ 2. Conteneur Back-End API</h2>
+                    <span class="badge">Port 8081:8081</span>
                 </div>
+                <div class="msg-box" id="back-message">Chargement du message...</div>
+                <ul class="meta-list">
+                    <li>• Rôle : Passerelle API & Orchestration</li>
+                    <li>• Quota : 0.50 CPU | 128 Mo RAM (non-root: backuser)</li>
+                </ul>
+            </div>
 
-                <!-- ONGLET 1 : HACK THE CLOUD CORE -->
-                <div class="tab-content" id="tab-content-heist">
-                    <div class="game-setup-panel" id="heist-setup">
-                        <h2>Initialiser une Infiltration</h2>
-                        <p class="subtitle">Le conteneur <code>game-server</code> a chiffré le Core du Cloud. Trouvez la clé secrète avant le verrouillage !</p>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="player-name">Pseudo Hacker :</label>
-                                <input type="text" id="player-name" value="CyberHacker_M1" maxlength="20">
-                            </div>
-                            <div class="form-group">
-                                <label for="game-difficulty">Niveau de Sécurité :</label>
-                                <select id="game-difficulty">
-                                    <option value="easy">Facile (Code 1 à 50 • 10 essais)</option>
-                                    <option value="medium" selected>Moyen (Code 1 à 100 • 7 essais)</option>
-                                    <option value="hard">Difficile (Code 1 à 200 • 5 essais)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary btn-large" id="btn-start-game">🚀 Lancer le Hack</button>
-                    </div>
-
-                    <!-- INTERFACE DE JEU EN COURS -->
-                    <div class="game-play-panel hidden" id="heist-play">
-                        <div class="play-stats-bar">
-                            <div class="stat-badge">Hacker: <strong id="current-player-display">-</strong></div>
-                            <div class="stat-badge">Essais restants: <strong id="tries-left-display" class="highlight-text">-</strong></div>
-                            <div class="stat-badge">Score: <strong id="player-score-display">0</strong> pts</div>
-                        </div>
-
-                        <!-- Écran Terminal du Core -->
-                        <div class="core-terminal">
-                            <div class="core-status" id="core-status-text">SYSTEME EN ATTENTE DE SAISIE...</div>
-                            <div class="core-range-hint" id="core-range-hint">Le code se situe entre 1 et 100</div>
-                            <div class="feedback-banner" id="guess-feedback">Entrez un code ci-dessous</div>
-                        </div>
-
-                        <!-- Contrôles d'entrée -->
-                        <div class="input-controls">
-                            <input type="number" id="guess-input" placeholder="Code secret..." autofocus>
-                            <button class="btn btn-accent" id="btn-submit-guess">Tester la Clé ↵</button>
-                            <button class="btn btn-secondary btn-sm" id="btn-abort-game">Abandonner</button>
-                        </div>
-
-                        <!-- Historique des essais -->
-                        <div class="attempts-history">
-                            <span class="label">Derniers essais :</span>
-                            <div id="attempts-list" class="attempts-chips"></div>
-                        </div>
-                    </div>
+            <!-- 3. Serveur Web / Jeu -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🎮 3. Conteneur Serveur Web / Serveur de Jeu</h2>
+                    <span class="badge">Port 8082:8082</span>
                 </div>
-
-                <!-- ONGLET 2 : CLOUD DATA MINER & ANTI-DDOS -->
-                <div class="tab-content hidden" id="tab-content-miner">
-                    <div class="miner-header">
-                        <div>
-                            <h2>Collecte de Paquets & Neutralisation DDoS</h2>
-                            <p class="subtitle">Cliquez sur les clusters pour miner des crédits cloud. Neutralisez les alertes rouges !</p>
-                        </div>
-                        <div class="miner-counter">
-                            <span>Crédits générés :</span>
-                            <strong id="miner-total-pts">0 pts</strong>
-                        </div>
-                    </div>
-
-                    <div class="server-grid" id="server-cluster-grid">
-                        <!-- 8 serveurs virtuels cliquables -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- COLONNE DROITE : LEADERBOARD & STATISTIQUES EN TEMPS RÉEL -->
-            <aside class="game-sidebar">
-                <!-- LEADERBOARD DU SERVEUR -->
-                <section class="card leaderboard-card">
-                    <div class="card-header-flex">
-                        <h3>🏆 Classement Cloud (En Direct)</h3>
-                        <button class="btn btn-sm" id="btn-refresh-scores">🔄</button>
-                    </div>
-                    <p class="subtitle">Maintenu en mémoire vive par <code>cloud_game_server</code></p>
-                    <div class="leaderboard-table" id="leaderboard-container">
-                        <div class="loading-text">Chargement des scores...</div>
-                    </div>
-                </section>
-
-                <!-- STATS GLOBALES DU CLUSTER -->
-                <section class="card stats-card">
-                    <h3>📊 Statistiques Moteur de Jeu</h3>
-                    <div class="stats-list">
-                        <div class="stat-line">
-                            <span>Total requêtes de jeu :</span>
-                            <strong id="stat-total-actions">0</strong>
-                        </div>
-                        <div class="stat-line">
-                            <span>Cores infiltrés avec succès :</span>
-                            <strong id="stat-cores-hacked" class="green-text">0</strong>
-                        </div>
-                        <div class="stat-line">
-                            <span>Alertes DDoS neutralisées :</span>
-                            <strong id="stat-bugs-eliminated" class="yellow-text">0</strong>
-                        </div>
-                        <div class="stat-line">
-                            <span>Uptime du serveur de jeu :</span>
-                            <strong id="stat-uptime">0s</strong>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- CONSOLE DES LOGS SIGNAUX / REQUÊTES -->
-                <section class="card logs-card">
-                    <div class="card-header-flex">
-                        <h4>📋 Logs Flux Inter-Conteneurs</h4>
-                        <button class="btn btn-sm" id="btn-clear-console">Vider</button>
-                    </div>
-                    <div class="mini-terminal" id="mini-terminal">
-                        <div class="log-row info">[SYS] Stack Docker initialisée. Prêt.</div>
-                    </div>
-                </section>
-            </aside>
+                <div class="msg-box" id="game-message">Chargement du message...</div>
+                <ul class="meta-list">
+                    <li>• Rôle : Serveur Web Spécialisé</li>
+                    <li>• Quota : 0.50 CPU | 128 Mo RAM (non-root: gameuser)</li>
+                </ul>
+            </div>
         </div>
-    </main>
 
-    <footer class="footer">
-        <p>Projet Docker Cloud • Architecture 3 conteneurs orchestrés • Communication Front ➔ Back ➔ Game Server</p>
-    </footer>
+        <div class="chain-status" id="chain-status">
+            🔄 Vérification de la liaison réseau interne (Front ➔ Back ➔ Serveur Web)...
+        </div>
 
-    <script src="app.js"></script>
+        <footer>
+            TP Docker Cloud • Ordonnancement par Healthcheck • Arrêt gracieux SIGTERM géré
+        </footer>
+    </div>
+
+    <script>
+        fetch('/api/hello-chain')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('back-message').textContent = data.back_message;
+                document.getElementById('game-message').textContent = data.game_message;
+                document.getElementById('chain-status').innerHTML = "✅ " + data.architecture_status;
+            })
+            .catch(err => {
+                document.getElementById('chain-status').innerHTML = "❌ Erreur de communication réseau inter-conteneurs";
+            });
+    </script>
 </body>
 </html>

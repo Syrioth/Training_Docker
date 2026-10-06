@@ -1,49 +1,30 @@
 ```mermaid
 flowchart TD
-    %% Architecture Docker Cloud - Master M1
-    subgraph Host["Machine Hôte (Navigateur / Utilisateur)"]
-        UserBrowser["🌐 Client Web (Navigateur)"]
-        CurlTest["⚙️ Client API / Tests"]
+    %% Architecture Docker Cloud - Master M1 (Hello World)
+    subgraph MachineHote["Machine Hôte (Navigateur / Client)"]
+        Browser["🌐 Navigateur Web (http://localhost:8080)"]
     end
 
-    subgraph DockerBridge["Réseau Virtuel Isolé : docker_cloud_net (Bridge)"]
+    subgraph ReseauDocker["Réseau Isolé Docker Bridge : docker_cloud_net"]
         subgraph FrontContainer["Conteneur : cloud_front_dashboard"]
-            FrontApp["front-app (Python 3 / Static Server)<br/><b>Port Interne : 8080</b><br/>User : frontuser (1003)<br/>Limites : 0.25 CPU | 64 Mo RAM"]
-            FrontHealth["Healthcheck : GET /health"]
+            Front["front (Port 8080)<br/>User non-root: frontuser (1003)<br/>Limites : 0.25 CPU | 64 Mo RAM"]
         end
 
         subgraph BackContainer["Conteneur : cloud_back_api"]
-            BackApp["back-api (Python 3 / REST API)<br/><b>Port Interne : 8081</b><br/>User : backuser (1002)<br/>Limites : 0.50 CPU | 128 Mo RAM"]
-            BackHealth["Healthcheck : GET /health"]
+            Back["back (Port 8081)<br/>User non-root: backuser (1002)<br/>Limites : 0.50 CPU | 128 Mo RAM"]
         end
 
         subgraph GameContainer["Conteneur : cloud_game_server"]
-            GameApp["game-server (Python 3 / PixelQuest)<br/><b>Port Interne : 8082</b><br/>User : gameuser (1001)<br/>Limites : 0.50 CPU | 128 Mo RAM"]
-            GameHealth["Healthcheck : GET /health"]
+            Game["game-server (Port 8082)<br/>User non-root: gameuser (1001)<br/>Limites : 0.50 CPU | 128 Mo RAM"]
         end
     end
 
     %% Flux réseau
-    UserBrowser -->|"Port 8080"| FrontApp
-    CurlTest -->|"Port 8081"| BackApp
-    CurlTest -->|"Port 8082"| GameApp
+    Browser -->|"1. Accès Web :8080"| Front
+    Front -->|"2. HTTP Interne : http://back:8081"| Back
+    Back -->|"3. HTTP Interne : http://game-server:8082"| Game
 
-    FrontApp -->|"HTTP Interne (http://back:8081)"| BackApp
-    BackApp -->|"HTTP Interne (http://game-server:8082)"| GameApp
-
-    %% Ordre de démarrage séquentiel
-    GameHealth -.->|"1. Condition : service_healthy"| BackApp
-    BackHealth -.->|"2. Condition : service_healthy"| FrontApp
-
-    %% Signaux
-    DockerDaemon["Docker Daemon"] -.->|"stop_signal : SIGTERM (PID 1)"| FrontApp
-    DockerDaemon -.->|"stop_signal : SIGTERM (PID 1)"| BackApp
-    DockerDaemon -.->|"stop_signal : SIGTERM (PID 1)"| GameApp
-
-    classDef host fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
-    classDef container fill:#1e293b,stroke:#334155,stroke-width:2px,color:#f8fafc;
-    classDef daemon fill:#1e293b,stroke:#f59e0b,stroke-width:1px,color:#fbbf24;
-    class Host,UserBrowser,CurlTest host;
-    class FrontContainer,BackContainer,GameContainer container;
-    class DockerDaemon daemon;
+    %% Ordre de démarrage garanti
+    Game -.->|"Condition : service_healthy (1er)"| Back
+    Back -.->|"Condition : service_healthy (2e)"| Front
 ```

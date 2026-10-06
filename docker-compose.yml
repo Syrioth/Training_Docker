@@ -1,13 +1,13 @@
 # ==============================================================================
-# PROJET DOCKER CLOUD - MASTER M1
-# Orchestration Multi-Conteneurs avec Images Personnalisées & Quotas de Ressources
+# PROJET DOCKER CLOUD - MASTER 1 INFORMATIQUE
+# Architecture Virtualisée Multi-Conteneurs (Hello World)
 # ==============================================================================
 
 services:
 
   # ----------------------------------------------------------------------------
-  # 1. SERVEUR WEB SPÉCIALISÉ : game-server (Serveur de Jeu PixelQuest)
-  # Ce conteneur démarre en premier. Il gère l'état et la logique du jeu.
+  # 1. SERVEUR WEB SPÉCIALISÉ : game-server
+  # Démarre en premier. Fournit son service web Hello World.
   # ----------------------------------------------------------------------------
   game-server:
     build:
@@ -21,9 +21,7 @@ services:
     stop_grace_period: 10s
     environment:
       - PORT=8082
-      - GAME_NAME=${GAME_NAME:-PixelQuest_Cloud_M1}
-      - MAX_PLAYERS=${MAX_PLAYERS:-32}
-      - DIFFICULTY=${DIFFICULTY:-hard}
+      - SERVICE_NAME=game-web-server
       - PYTHONUNBUFFERED=1
     ports:
       - "${GAME_HOST_PORT:-8082}:8082"
@@ -45,8 +43,8 @@ services:
       start_period: 2s
 
   # ----------------------------------------------------------------------------
-  # 2. BACK-END : back-api (Passerelle API & Orchestration)
-  # Dépend directement de game-server et attend que son healthcheck soit valide.
+  # 2. BACK-END : back-api
+  # Démarre dès que game-server est sain (healthy).
   # ----------------------------------------------------------------------------
   back:
     build:
@@ -61,9 +59,7 @@ services:
     environment:
       - PORT=8081
       - SERVICE_NAME=backend-core-api
-      - ENVIRONMENT=${ENVIRONMENT:-production}
       - GAME_SERVER_URL=http://game-server:8082
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - PYTHONUNBUFFERED=1
     ports:
       - "${BACK_HOST_PORT:-8081}:8081"
@@ -88,8 +84,8 @@ services:
       start_period: 2s
 
   # ----------------------------------------------------------------------------
-  # 3. FRONT-END : front-app (Interface Web & Dashboard Cloud)
-  # Dépend de back-api et attend que son healthcheck soit valide.
+  # 3. FRONT-END : front-dashboard
+  # Démarre dès que back-api est sain (healthy). Expose l'interface web.
   # ----------------------------------------------------------------------------
   front:
     build:
@@ -104,7 +100,6 @@ services:
     environment:
       - PORT=8080
       - BACKEND_URL=http://back:8081
-      - APP_TITLE=Docker Cloud Platform M1
       - PYTHONUNBUFFERED=1
     ports:
       - "${FRONT_HOST_PORT:-8080}:8080"
@@ -129,7 +124,7 @@ services:
       start_period: 2s
 
 # ------------------------------------------------------------------------------
-# Configuration Réseau : Réseau Bridge isolé pour le Cloud
+# Réseau isolé bridge
 # ------------------------------------------------------------------------------
 networks:
   cloud-network:

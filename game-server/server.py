@@ -77,20 +77,49 @@ class GameRequestHandler(BaseHTTPRequestHandler):
             except Exception:
                 payload = {}
 
+            action = payload.get("action", "add_points")
             session_id = payload.get("session_id", "game-session-01")
-            player = payload.get("player", "Nouveau_Joueur")
-            points = int(payload.get("points", 50))
+            player = str(payload.get("player", "")).strip()
 
             if session_id in GAME_INSTANCES:
                 inst = GAME_INSTANCES[session_id]
-                if player not in inst["active_players"]:
-                    inst["active_players"].append(player)
-                inst["scores"][player] = inst["scores"].get(player, 0) + points
 
-                self._send_json(200, {
-                    "message": f"Action d'administration validee pour {session_id}",
-                    "session": inst
-                })
+                if action in ["kick", "delete", "remove"]:
+                    if not player:
+                        self._send_json(400, {"error": "Nom de joueur manquant pour l'exclusion"})
+                        return
+
+                    removed = False
+                    if player in inst["active_players"]:
+                        inst["active_players"].remove(player)
+                        removed = True
+                    if player in inst["scores"]:
+                        del inst["scores"][player]
+                        removed = True
+
+                    if removed:
+                        print(f"[{SERVICE_NAME}] Joueur '{player}' exclu de {session_id}.", flush=True)
+                        self._send_json(200, {
+                            "message": f"Joueur '{player}' exclu avec succes de la session {session_id}",
+                            "session": inst
+                        })
+                    else:
+                        self._send_json(404, {"error": f"Joueur '{player}' introuvable dans {session_id}"})
+                else:
+                    # Attribution de points / inscription d'un joueur
+                    points = int(payload.get("points", 50))
+                    if not player:
+                        player = "Joueur_Invite"
+
+                    if player not in inst["active_players"]:
+                        inst["active_players"].append(player)
+                    inst["scores"][player] = inst["scores"].get(player, 0) + points
+
+                    print(f"[{SERVICE_NAME}] Session {session_id} : {points} pts attribues a {player}.", flush=True)
+                    self._send_json(200, {
+                        "message": f"Action d'administration validee pour {session_id}",
+                        "session": inst
+                    })
             else:
                 self._send_json(404, {"error": "Session introuvable"})
         else:

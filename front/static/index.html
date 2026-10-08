@@ -180,9 +180,32 @@
             font-weight: 700;
             font-size: 0.85rem;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, background-color 0.2s;
         }
         .btn:hover { opacity: 0.9; }
+        .btn-danger {
+            background: #ef4444;
+            color: #ffffff;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        .chip-kick-btn {
+            background: transparent;
+            border: none;
+            color: #f87171;
+            cursor: pointer;
+            font-size: 0.95rem;
+            margin-left: 0.4rem;
+            padding: 0 0.25rem;
+            border-radius: 3px;
+            line-height: 1;
+            transition: all 0.15s;
+        }
+        .chip-kick-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            color: #ffffff;
+        }
 
         /* Terminal Logs */
         .terminal {
@@ -282,14 +305,18 @@
 
             <!-- Formulaire d'action d'administration -->
             <div class="admin-action-bar">
-                <label>Pilotage Admin :</label>
+                <label>Action Admin :</label>
+                <select id="action-type-select">
+                    <option value="add_points">Attribuer des points / Inscrire</option>
+                    <option value="kick">Exclure le joueur (Kick)</option>
+                </select>
                 <select id="action-session-select">
                     <option value="game-session-01">Session 01 : PixelQuest</option>
                     <option value="game-session-02">Session 02 : CyberArena</option>
                 </select>
                 <input type="text" id="action-player-input" placeholder="Pseudo joueur" value="Joueur_Test">
                 <input type="number" id="action-points-input" value="50" style="width: 80px;" min="10" max="500">
-                <button class="btn" id="btn-admin-action">Transmettre Commande Admin</button>
+                <button class="btn" id="btn-admin-action">Executer Commande</button>
             </div>
         </section>
 
@@ -319,6 +346,27 @@
             term.scrollTop = term.scrollHeight;
         }
 
+        async function kickPlayer(sId, player) {
+            if (!confirm(`Confirmer l'exclusion du joueur "${player}" de la session "${sId}" ?`)) return;
+            logMsg(`Exclusion du joueur [${player}] sur ${sId}...`, 'info');
+            try {
+                const resp = await fetch('/api/admin/action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sId, player: player, action: 'kick' })
+                });
+                const res = await resp.json();
+                if (resp.ok) {
+                    logMsg(`Succes : Joueur "${player}" exclu de la session ${sId}.`, 'success');
+                    loadGameSessions();
+                } else {
+                    logMsg(`Erreur : ${res.error || 'Echec de l\'action'}`, 'info');
+                }
+            } catch (e) {
+                logMsg(`Erreur reseau : ${e.message}`, 'info');
+            }
+        }
+
         async function loadGameSessions() {
             try {
                 // Appel via le Reverse Proxy Nginx : /api/admin/games -> route vers http://back:8081/admin/games
@@ -336,7 +384,12 @@
 
                     let chipsHtml = '';
                     for (const [p, score] of Object.entries(inst.scores || {})) {
-                        chipsHtml += `<span class="player-chip">${p} : <span>${score} pts</span></span>`;
+                        chipsHtml += `
+                            <span class="player-chip">
+                                ${p} : <span>${score} pts</span>
+                                <button class="chip-kick-btn" title="Exclure ce joueur de la session" onclick="kickPlayer('${sId}', '${p}')">&times;</button>
+                            </span>
+                        `;
                     }
 
                     card.innerHTML = `
@@ -348,8 +401,8 @@
                         <div class="metric-row"><span>Genre / Type :</span><span>${inst.genre}</span></div>
                         <div class="metric-row"><span>Capacite :</span><span>${inst.active_players.length} / ${inst.max_players} joueurs</span></div>
                         <div class="metric-row"><span>Frequence tick :</span><span>${inst.tick_rate} Hz</span></div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Joueurs & Scores actifs :</div>
-                        <div class="chips-container">${chipsHtml || 'Aucun joueur'}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Joueurs & Scores actifs (cliquez sur &times; pour exclure) :</div>
+                        <div class="chips-container">${chipsHtml || 'Aucun joueur connecte'}</div>
                     `;
                     container.appendChild(card);
                 }
@@ -358,10 +411,35 @@
             }
         }
 
+        document.getElementById('action-type-select')?.addEventListener('change', (e) => {
+            const ptsInput = document.getElementById('action-points-input');
+            const submitBtn = document.getElementById('btn-admin-action');
+            if (e.target.value === 'kick') {
+                ptsInput.style.display = 'none';
+                submitBtn.classList.add('btn-danger');
+                submitBtn.textContent = 'Exclure Joueur';
+            } else {
+                ptsInput.style.display = 'inline-block';
+                submitBtn.classList.remove('btn-danger');
+                submitBtn.textContent = 'Executer Commande';
+            }
+        });
+
         document.getElementById('btn-admin-action')?.addEventListener('click', async () => {
             const sId = document.getElementById('action-session-select').value;
-            const player = document.getElementById('action-player-input').value.trim() || 'Admin_User';
+            const actionType = document.getElementById('action-type-select').value;
+            const player = document.getElementById('action-player-input').value.trim();
             const points = parseInt(document.getElementById('action-points-input').value, 10) || 50;
+
+            if (!player) {
+                alert("Veuillez renseigner un pseudo de joueur.");
+                return;
+            }
+
+            if (actionType === 'kick') {
+                await kickPlayer(sId, player);
+                return;
+            }
 
             logMsg(`Envoi action admin [${sId}] : Attribution de ${points} pts a ${player}...`, 'info');
 
@@ -369,14 +447,14 @@
                 const resp = await fetch('/api/admin/action', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sId, player: player, points: points })
+                    body: JSON.stringify({ session_id: sId, player: player, points: points, action: 'add_points' })
                 });
                 const res = await resp.json();
                 if (resp.ok) {
-                    logMsg(`Succes : Session mise a jour sur le game-server.`, 'success');
+                    logMsg(`Succes : Session ${sId} mise a jour sur le game-server.`, 'success');
                     loadGameSessions();
                 } else {
-                    logMsg(`Erreur : ${res.error}`, 'info');
+                    logMsg(`Erreur : ${res.error || 'Erreur inconnue'}`, 'info');
                 }
             } catch (e) {
                 logMsg(`Erreur reseau : ${e.message}`, 'info');

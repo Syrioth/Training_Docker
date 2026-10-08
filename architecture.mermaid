@@ -1,4 +1,3 @@
-```mermaid
 flowchart TD
     %% Architecture Docker Cloud - Master M1 (Front Nginx, Back, Game-Server)
     subgraph MachineHote["Machine Hote (Navigateur / Client)"]
@@ -27,4 +26,3 @@ flowchart TD
     %% Ordre de demarrage garanti
     Game -.->|"Condition : service_healthy (1er)"| Back
     Back -.->|"Condition : service_healthy (2e)"| Front
-```

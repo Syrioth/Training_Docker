@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projet Docker Cloud - Hello World</title>
+    <title>Projet Docker Cloud - Hello World (Nginx)</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -11,6 +11,7 @@
             --text: #f8fafc;
             --text-muted: #94a3b8;
             --accent: #38bdf8;
+            --nginx-green: #009639;
             --success: #10b981;
             --border: #334155;
         }
@@ -30,9 +31,23 @@
             margin-bottom: 2rem;
             border-bottom: 1px solid var(--border);
             padding-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
-        h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #fff; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: #fff; }
         .subtitle { color: var(--text-muted); font-size: 0.95rem; }
+        .badge-nginx {
+            background: rgba(0, 150, 57, 0.15);
+            color: #4ade80;
+            border: 1px solid var(--nginx-green);
+            padding: 0.3rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
         .grid {
             display: grid;
             gap: 1.25rem;
@@ -96,70 +111,78 @@
 <body>
     <div class="container">
         <header>
-            <h1>☁️ Projet Docker Cloud — Master 1</h1>
-            <p class="subtitle">Architecture virtualisée multi-conteneurs • 0 image Docker Hub • Hello World</p>
+            <div>
+                <h1>☁️ Projet Docker Cloud — Master 1</h1>
+                <p class="subtitle">Architecture virtualisée multi-conteneurs • 0 image Docker Hub • Hello World</p>
+            </div>
+            <div class="badge-nginx">
+                ⚡ Encapsulé avec Nginx Custom
+            </div>
         </header>
 
         <div class="grid">
-            <!-- 1. Front-End -->
+            <!-- 1. Front-End Nginx -->
             <div class="card">
                 <div class="card-header">
-                    <h2>🌐 1. Conteneur Front-End</h2>
-                    <span class="badge">Port 8080:8080</span>
+                    <h2>🌐 1. Conteneur Front-End (Nginx Personnalisé)</h2>
+                    <span class="badge">Port hôte: 8080</span>
                 </div>
-                <div class="msg-box">Hello World from Front-End Container!</div>
+                <div class="msg-box">Hello World from Front-End Nginx Container!</div>
                 <ul class="meta-list">
-                    <li>• Rôle : Serveur Web HTTP & Dashboard</li>
-                    <li>• Quota : 0.25 CPU | 64 Mo RAM (non-root: frontuser)</li>
+                    <li>• Rôle : Serveur Web HTTP & Reverse Proxy (Alpine 3.20 + Nginx compilé)</li>
+                    <li>• Quota Cgroups : 0.25 CPU | 64 Mo RAM (non-root: frontuser UID 1003)</li>
+                    <li>• Routage : /api/ ➔ proxy_pass vers http://back:8081/</li>
                 </ul>
             </div>
 
-            <!-- 2. Back-End -->
+            <!-- 2. Back-End API -->
             <div class="card">
                 <div class="card-header">
                     <h2>⚙️ 2. Conteneur Back-End API</h2>
-                    <span class="badge">Port 8081:8081</span>
+                    <span class="badge">Port hôte: 8081</span>
                 </div>
-                <div class="msg-box" id="back-message">Chargement du message...</div>
+                <div class="msg-box" id="back-message">Interrogation du reverse proxy /api/...</div>
                 <ul class="meta-list">
-                    <li>• Rôle : Passerelle API & Orchestration</li>
-                    <li>• Quota : 0.50 CPU | 128 Mo RAM (non-root: backuser)</li>
+                    <li>• Rôle : Passerelle API & Orchestration (Python 3)</li>
+                    <li>• Quota Cgroups : 0.50 CPU | 128 Mo RAM (non-root: backuser UID 1002)</li>
                 </ul>
             </div>
 
             <!-- 3. Serveur Web / Jeu -->
             <div class="card">
                 <div class="card-header">
-                    <h2>🎮 3. Conteneur Serveur Web / Serveur de Jeu</h2>
-                    <span class="badge">Port 8082:8082</span>
+                    <h2>🎮 3. Conteneur Serveur Web / Jeu</h2>
+                    <span class="badge">Port hôte: 8082</span>
                 </div>
-                <div class="msg-box" id="game-message">Chargement du message...</div>
+                <div class="msg-box" id="game-message">En attente de transmission...</div>
                 <ul class="meta-list">
-                    <li>• Rôle : Serveur Web Spécialisé</li>
-                    <li>• Quota : 0.50 CPU | 128 Mo RAM (non-root: gameuser)</li>
+                    <li>• Rôle : Serveur Web Spécialisé Cœur de Données (Python 3)</li>
+                    <li>• Quota Cgroups : 0.50 CPU | 128 Mo RAM (non-root: gameuser UID 1001)</li>
                 </ul>
             </div>
         </div>
 
         <div class="chain-status" id="chain-status">
-            🔄 Vérification de la liaison réseau interne (Front ➔ Back ➔ Serveur Web)...
+            🔄 Test du Reverse Proxy Nginx et de la chaîne inter-conteneurs...
         </div>
 
         <footer>
-            TP Docker Cloud • Ordonnancement par Healthcheck • Arrêt gracieux SIGTERM géré
+            TP Docker Cloud • Reverse Proxy Nginx • Ordonnancement par Healthcheck • Arrêt gracieux SIGQUIT/SIGTERM
         </footer>
     </div>
 
     <script>
-        fetch('/api/hello-chain')
+        // Appel au Reverse Proxy Nginx local sur /api/
+        // Nginx redirige automatiquement vers http://back:8081/
+        fetch('/api/')
             .then(res => res.json())
             .then(data => {
-                document.getElementById('back-message').textContent = data.back_message;
-                document.getElementById('game-message').textContent = data.game_message;
-                document.getElementById('chain-status').innerHTML = "✅ " + data.architecture_status;
+                document.getElementById('back-message').textContent = data.message;
+                document.getElementById('game-message').textContent = data.game_server_response;
+                document.getElementById('chain-status').innerHTML = "✅ Reverse Proxy Nginx opérationnel : Front ➔ Back ➔ Serveur Web connectés avec succès !";
             })
             .catch(err => {
-                document.getElementById('chain-status').innerHTML = "❌ Erreur de communication réseau inter-conteneurs";
+                document.getElementById('chain-status').innerHTML = "❌ Erreur de routage reverse proxy : " + err;
             });
     </script>
 </body>

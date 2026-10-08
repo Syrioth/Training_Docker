@@ -1,13 +1,13 @@
 # ==============================================================================
 # PROJET DOCKER CLOUD - MASTER 1 INFORMATIQUE
-# Architecture Virtualisée Multi-Conteneurs (Hello World)
+# Architecture Virtualisée Multi-Conteneurs (Front Nginx + Back + Serveur Web)
 # ==============================================================================
 
 services:
 
   # ----------------------------------------------------------------------------
-  # 1. SERVEUR WEB SPÉCIALISÉ : game-server
-  # Démarre en premier. Fournit son service web Hello World.
+  # 1. SERVEUR WEB SPÉCIALISÉ : game-server (Cœur de données)
+  # Démarre en premier (1ère position). Fournit son service web Hello World.
   # ----------------------------------------------------------------------------
   game-server:
     build:
@@ -44,7 +44,7 @@ services:
 
   # ----------------------------------------------------------------------------
   # 2. BACK-END : back-api
-  # Démarre dès que game-server est sain (healthy).
+  # Démarre en 2ème position dès que game-server est sain (healthy).
   # ----------------------------------------------------------------------------
   back:
     build:
@@ -84,23 +84,17 @@ services:
       start_period: 2s
 
   # ----------------------------------------------------------------------------
-  # 3. FRONT-END : front-dashboard
-  # Démarre dès que back-api est sain (healthy). Expose l'interface web.
+  # 3. FRONT-END : front (Nginx Personnalisé & Reverse Proxy)
+  # Démarre en 3ème position dès que back-api est sain (healthy).
   # ----------------------------------------------------------------------------
   front:
     build:
       context: ./front
       dockerfile: Dockerfile
-      args:
-        DEFAULT_PORT: 8080
     container_name: cloud_front_dashboard
     restart: unless-stopped
-    stop_signal: SIGTERM
+    stop_signal: SIGQUIT
     stop_grace_period: 10s
-    environment:
-      - PORT=8080
-      - BACKEND_URL=http://back:8081
-      - PYTHONUNBUFFERED=1
     ports:
       - "${FRONT_HOST_PORT:-8080}:8080"
     networks:

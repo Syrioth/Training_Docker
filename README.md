@@ -1,47 +1,62 @@
-# ☁️ Projet Docker Cloud — Rendu TP Master 1 Informatique
+# Projet Docker Cloud - Rendu TP Master 1 Informatique
 
-Projet de virtualisation et d'orchestration multi-conteneurs basé sur Docker.
-Conformément aux consignes et au barème d'évaluation :
-- **0 image issue de Docker Hub** : Toutes les images sont personnalisées via leur propre `Dockerfile` (y compris le Front Nginx, compilé sur Alpine).
+Projet de virtualisation et d'orchestration multi-conteneurs base sur Docker.
+
+Conformement aux consignes et au bareme d'evaluation :
+- **0 image issue de Docker Hub** : Toutes les images sont personnalisees via leur propre `Dockerfile` (y compris le Front Nginx, compile et configure sur base Alpine).
 - **3 types d'images distinctes** : 
   1. **Front-End Nginx** (Serveur Web & Reverse Proxy)
-  2. **Back-End API** (Python 3)
-  3. **Serveur Web Spécialisé / Jeu** (Python 3, Cœur de données)
-- **Code Hello World épuré** : Démontre la chaîne complète de communication réseau sans complexité inutile.
-- **Ressources cgroups contraintes** : Quotas stricts de CPU et de mémoire alloués à chaque conteneur.
-- **Arrêt gracieux géré** : Signaux POSIX (`SIGQUIT` pour Nginx, `SIGTERM` pour Python) sous PID 1.
-- **Ordonnancement séquentiel** : Utilisation des `healthcheck` et de `depends_on (condition: service_healthy)`.
+  2. **Back-End API** (Passerelle REST Python 3)
+  3. **Serveur Web Specialise** (Serveur de jeu / Coeur de donnees Python 3)
+- **Code Hello World epure** : Demontre la chaine complete de communication reseau sans surcharge inutile.
+- **Ressources cgroups contraintes** : Quotas stricts de CPU et de memoire alloues a chaque conteneur.
+- **Arret gracieux gere** : Signaux POSIX (`SIGQUIT` pour Nginx, `SIGTERM` pour Python) sous PID 1.
+- **Ordonnancement sequentiel** : Utilisation des `healthcheck` et de `depends_on (condition: service_healthy)`.
 
 ---
 
-## 📋 Récapitulatif du Barème & Justifications
+## 1. Role du Fichier Mermaid (`architecture.mermaid`)
 
-| Critère du Barème | Réalisation Technique & Justification |
+Le fichier `architecture.mermaid` contient la description textuelle formalisee du schema d'architecture selon la syntaxe **Mermaid.js**.
+
+### A quoi sert-il ?
+1. **Rendu natif sur GitHub et GitLab** :
+   GitHub et GitLab interpretent nativement les blocs Mermaid. Lors de la consultation du depot sur GitHub, le fichier et le bloc ci-dessous sont automatiquement convertis en un diagramme vectoriel interactif, sans avoir besoin d'exporter une image manuellement.
+2. **Architecture as Code (Documentation versionnee)** :
+   Plutot qu'une simple image binaire difficilement modifiable, le schema est ecrit en texte brut. Toute modification de l'infrastructure (changement de port, ajout d'un service, modification d'un quota) est tracable et versionnable via Git avec un diff lisible.
+3. **Reponse au bareme du TP** :
+   Ce fichier remplit directement le critere *"Schema des communications /1"* exige dans le sujet.
+
+---
+
+## 2. Recapitulatif du Bareme et Justifications Techniques
+
+| Critere du Bareme | Realisation Technique & Justification |
 | :--- | :--- |
-| **Mise en forme du rendu (/1)** | Dépôt Git structuré, fichiers sources indentés et commentés, configuration centralisée dans `.env` et `docker-compose.yml`. |
-| **Explication des dépendances installées (/1)** | Base `alpine:3.20` (~7 Mo). **Front** : `nginx` (serveur web asynchrone haute performance et reverse proxy) et `curl`. **Back & Game** : `python3` (runtime natif sans module `pip` tiers) et `curl` pour les sondes `HEALTHCHECK`. Nettoyage immédiat du cache apk (`rm -rf /var/cache/apk/*`). |
-| **Explication des manipulations sur l'OS (/1)** | Respect strict du principe de moindre privilège : utilisateurs non-root dédiés (`frontuser:1003`, `backuser:1002`, `gameuser:1001`) avec shell interactif désactivé (`-s /sbin/nologin`). Pour Nginx : création et assignation des répertoires temporaires (`/var/log/nginx`, `/tmp/client_temp`, etc.) accessibles en non-root. |
+| **Mise en forme du rendu (/1)** | Depot Git structure, fichiers sources indentes et commentes, configuration centralisee dans `.env` et `docker-compose.yml`. |
+| **Explication des dependances installees (/1)** | Base `alpine:3.20` (~7 Mo). **Front** : `nginx` (serveur web asynchrone haute performance et reverse proxy) et `curl`. **Back & Game** : `python3` (runtime natif sans module `pip` tiers) et `curl` pour les sondes `HEALTHCHECK`. Nettoyage immediat du cache apk (`rm -rf /var/cache/apk/*`). |
+| **Explication des manipulations sur l'OS (/1)** | Respect strict du principe de moindre privilege : utilisateurs non-root dedies (`frontuser:1003`, `backuser:1002`, `gameuser:1001`) avec shell interactif desactive (`-s /sbin/nologin`). Pour Nginx : creation et assignation des repertoires temporaires (`/var/log/nginx`, `/tmp/client_temp`, etc.) avec droits non-root. |
 | **Explication des arguments attendus (/1)** | Arguments au build (`ARG DEFAULT_PORT`) et arguments au run sous forme de variables d'environnement (`PORT`, `SERVICE_NAME`, `GAME_SERVER_URL`, `PYTHONUNBUFFERED=1`). |
-| **Explications sur les entrypoints choisis (/1)** | Syntaxe **Exec Form** : `ENTRYPOINT ["nginx"]` pour le front (avec `daemon off;` dans `nginx.conf`) et `ENTRYPOINT ["python3", "app.py"]` pour le back. Les exécutables tournent directement en **PID 1**, sans sous-shell `/bin/sh -c`, interceptant immédiatement les signaux d'arrêt émis par Docker. |
-| **Arguments traduits dans Docker Compose (/1)** | Fichier `.env` mappé directement dans les sections `environment:`, `ports:` et `deploy.resources` de `docker-compose.yml`. |
-| **Limitation des ressources de chaque conteneur (/1)** | Quotas cgroups définis dans `deploy.resources.limits` : **Front (Nginx)** : 0.25 CPU / 64 Mo RAM (très faible empreinte mémoire) • **Back** : 0.50 CPU / 128 Mo RAM • **Serveur Web / Jeu** : 0.50 CPU / 128 Mo RAM. |
-| **Les SIGTERM / SIGQUIT sont gérés (/1)** | Nginx configuré avec `STOPSIGNAL SIGQUIT` (fermeture gracieuse des workers après traitement des connexions en cours). Les services Python capturent `SIGTERM`. Arrêt immédiat sous 1 seconde sans timeout `SIGKILL`. Code de sortie : 0. |
-| **Dépendances & Ordre de démarrage (/1)** | Ordonnancement séquentiel garanti : `game-server` (Healthcheck OK) ➔ `back` (démarre une fois game-server `healthy`) ➔ `front` (démarre une fois back `healthy`). |
-| **Schéma des communications (/1)** | Schéma vectoriel SVG (`architecture.svg`) et diagramme Mermaid ci-dessous. |
+| **Explications sur les entrypoints choisis (/1)** | Syntaxe **Exec Form** : `ENTRYPOINT ["nginx"]` pour le front (avec `daemon off;` dans `nginx.conf`) et `ENTRYPOINT ["python3", "app.py"]` pour le back. Les executables tournent directement en **PID 1**, sans sous-shell `/bin/sh -c`, interceptant immediatement les signaux d'arret emis par Docker. |
+| **Arguments traduits dans Docker Compose (/1)** | Fichier `.env` mappe directement dans les sections `environment:`, `ports:` et `deploy.resources` de `docker-compose.yml`. |
+| **Limitation des ressources de chaque conteneur (/1)** | Quotas cgroups definis dans `deploy.resources.limits` : **Front (Nginx)** : 0.25 CPU / 64 Mo RAM (tres faible empreinte memoire) - **Back** : 0.50 CPU / 128 Mo RAM - **Serveur Web / Jeu** : 0.50 CPU / 128 Mo RAM. |
+| **Les SIGTERM / SIGQUIT sont geres (/1)** | Nginx configure avec `STOPSIGNAL SIGQUIT` (fermeture gracieuse des workers apres traitement des requetes en cours). Les services Python capturent `SIGTERM`. Arret immediat sans timeout brutal `SIGKILL`. Code de sortie : 0. |
+| **Dependances & Ordre de demarrage (/1)** | Ordonnancement sequentiel garanti : `game-server` (Healthcheck OK) -> `back` (demarre une fois game-server `healthy`) -> `front` (demarre une fois back `healthy`). |
+| **Schema des communications (/1)** | Schema vectoriel SVG (`architecture.svg`) et diagramme Mermaid ci-dessous. |
 
 ---
 
-## 🗺️ Schéma des Communications & Architecture
+## 3. Schema des Communications et de l'Architecture
 
 ```mermaid
 flowchart TD
-    subgraph MachineHote["Machine Hôte (Navigateur / Client)"]
-        Browser["🌐 Navigateur Web (http://localhost:8080)"]
+    subgraph MachineHote["Machine Hote (Navigateur / Client)"]
+        Browser["Navigateur Web (http://localhost:8080)"]
     end
 
-    subgraph ReseauDocker["Réseau Isolé Docker Bridge : docker_cloud_net"]
+    subgraph ReseauDocker["Reseau Isole Docker Bridge : docker_cloud_net"]
         subgraph FrontContainer["Conteneur : cloud_front_dashboard"]
-            Front["front : Nginx Custom (Port 8080)<br/>User non-root: frontuser (1003)<br/>Limites : 0.25 CPU | 64 Mo RAM<br/>Reverse Proxy : /api/ ➔ back:8081"]
+            Front["front : Nginx Custom (Port 8080)<br/>User non-root: frontuser (1003)<br/>Limites : 0.25 CPU | 64 Mo RAM<br/>Reverse Proxy : /api/ -> back:8081"]
         end
 
         subgraph BackContainer["Conteneur : cloud_back_api"]
@@ -53,52 +68,50 @@ flowchart TD
         end
     end
 
-    %% Flux réseau
-    Browser -->|"1. Accès Web :8080"| Front
+    Browser -->|"1. Acces Web :8080"| Front
     Front -->|"2. proxy_pass /api/ (Interne :8081)"| Back
     Back -->|"3. HTTP Interne : http://game-server:8082"| Game
 
-    %% Ordre de démarrage garanti
     Game -.->|"Condition : service_healthy (1er)"| Back
     Back -.->|"Condition : service_healthy (2e)"| Front
 ```
 
 ---
 
-## 🚀 Démarrage Rapide
+## 4. Guide d'Execution
 
-### 1. Construire les images personnalisées
+### 1. Construire les images personnalisees
 ```bash
 docker compose build
 ```
 
-### 2. Démarrer la stack en arrière-plan
+### 2. Demarrer la stack en arriere-plan
 ```bash
 docker compose up -d
 ```
 
 ### 3. Tester dans le navigateur
-Ouvrez votre navigateur sur : **[http://localhost:8080](http://localhost:8080)**
+Ouvrez votre navigateur sur : [http://localhost:8080](http://localhost:8080)
 
-Vous observerez que **Nginx sert l'interface** et relaie automatiquement les requêtes via sa directive `proxy_pass` vers l'API backend et le serveur de jeu :
+Le conteneur **Front Nginx** sert l'interface et relaie automatiquement la requete via sa directive `proxy_pass` vers l'API backend et le serveur de jeu :
 - **Front Nginx** : `Hello World from Front-End Nginx Container!`
 - **Back API** : `Hello World from Back-End API!`
 - **Serveur Web / Jeu** : `Hello World from Game Web Server!`
 
-### 4. Vérifier les limitations de ressources cgroups
+### 4. Verifier les limitations de ressources cgroups
 ```powershell
 docker inspect cloud_front_dashboard --format 'Memory={{.HostConfig.Memory}} NanoCpus={{.HostConfig.NanoCPUs}}'
 docker inspect cloud_game_server --format 'Memory={{.HostConfig.Memory}} NanoCpus={{.HostConfig.NanoCPUs}}'
 ```
 
-### 5. Vérifier l'arrêt gracieux
+### 5. Verifier l'arret gracieux
 ```powershell
 docker stop cloud_front_dashboard
 docker stop cloud_game_server
 docker logs cloud_game_server --tail 5
 ```
 
-### 6. Éteindre la stack
+### 6. Eteindre la stack
 ```bash
 docker compose down
 ```

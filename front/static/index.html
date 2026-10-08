@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projet Docker Cloud - Hello World (Nginx)</title>
+    <title>Projet Docker Cloud - Architecture Virtualisee</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -112,11 +112,11 @@
     <div class="container">
         <header>
             <div>
-                <h1>☁️ Projet Docker Cloud — Master 1</h1>
-                <p class="subtitle">Architecture virtualisée multi-conteneurs • 0 image Docker Hub • Hello World</p>
+                <h1>Projet Docker Cloud - Master 1</h1>
+                <p class="subtitle">Architecture virtualisee multi-conteneurs - 0 image Docker Hub</p>
             </div>
             <div class="badge-nginx">
-                ⚡ Encapsulé avec Nginx Custom
+                Reverse Proxy Nginx Personnalise
             </div>
         </header>
 
@@ -124,65 +124,63 @@
             <!-- 1. Front-End Nginx -->
             <div class="card">
                 <div class="card-header">
-                    <h2>🌐 1. Conteneur Front-End (Nginx Personnalisé)</h2>
-                    <span class="badge">Port hôte: 8080</span>
+                    <h2>1. Conteneur Front-End (Nginx Personnalise)</h2>
+                    <span class="badge">Port hote: 8080</span>
                 </div>
                 <div class="msg-box">Hello World from Front-End Nginx Container!</div>
                 <ul class="meta-list">
-                    <li>• Rôle : Serveur Web HTTP & Reverse Proxy (Alpine 3.20 + Nginx compilé)</li>
-                    <li>• Quota Cgroups : 0.25 CPU | 64 Mo RAM (non-root: frontuser UID 1003)</li>
-                    <li>• Routage : /api/ ➔ proxy_pass vers http://back:8081/</li>
+                    <li>- Role : Serveur Web HTTP & Reverse Proxy (Alpine 3.20 + Nginx)</li>
+                    <li>- Quota Cgroups : 0.25 CPU | 64 Mo RAM (non-root: frontuser UID 1003)</li>
+                    <li>- Routage interne : /api/ -> proxy_pass vers http://back:8081/</li>
                 </ul>
             </div>
 
             <!-- 2. Back-End API -->
             <div class="card">
                 <div class="card-header">
-                    <h2>⚙️ 2. Conteneur Back-End API</h2>
-                    <span class="badge">Port hôte: 8081</span>
+                    <h2>2. Conteneur Back-End API</h2>
+                    <span class="badge">Port hote: 8081</span>
                 </div>
                 <div class="msg-box" id="back-message">Interrogation du reverse proxy /api/...</div>
                 <ul class="meta-list">
-                    <li>• Rôle : Passerelle API & Orchestration (Python 3)</li>
-                    <li>• Quota Cgroups : 0.50 CPU | 128 Mo RAM (non-root: backuser UID 1002)</li>
+                    <li>- Role : Passerelle API & Orchestration (Python 3)</li>
+                    <li>- Quota Cgroups : 0.50 CPU | 128 Mo RAM (non-root: backuser UID 1002)</li>
                 </ul>
             </div>
 
             <!-- 3. Serveur Web / Jeu -->
             <div class="card">
                 <div class="card-header">
-                    <h2>🎮 3. Conteneur Serveur Web / Jeu</h2>
-                    <span class="badge">Port hôte: 8082</span>
+                    <h2>3. Conteneur Serveur Web Spécialisé</h2>
+                    <span class="badge">Port hote: 8082</span>
                 </div>
                 <div class="msg-box" id="game-message">En attente de transmission...</div>
                 <ul class="meta-list">
-                    <li>• Rôle : Serveur Web Spécialisé Cœur de Données (Python 3)</li>
-                    <li>• Quota Cgroups : 0.50 CPU | 128 Mo RAM (non-root: gameuser UID 1001)</li>
+                    <li>- Role : Serveur Web Specialise Coeur de Donnees (Python 3)</li>
+                    <li>- Quota Cgroups : 0.50 CPU | 128 Mo RAM (non-root: gameuser UID 1001)</li>
                 </ul>
             </div>
         </div>
 
         <div class="chain-status" id="chain-status">
-            🔄 Test du Reverse Proxy Nginx et de la chaîne inter-conteneurs...
+            Verification du Reverse Proxy Nginx et de la chaine inter-conteneurs...
         </div>
 
         <footer>
-            TP Docker Cloud • Reverse Proxy Nginx • Ordonnancement par Healthcheck • Arrêt gracieux SIGQUIT/SIGTERM
+            TP Docker Cloud - Reverse Proxy Nginx - Ordonnancement par Healthcheck - Arret gracieux SIGQUIT/SIGTERM
         </footer>
     </div>
 
     <script>
-        // Appel au Reverse Proxy Nginx local sur /api/
-        // Nginx redirige automatiquement vers http://back:8081/
         fetch('/api/')
             .then(res => res.json())
             .then(data => {
                 document.getElementById('back-message').textContent = data.message;
                 document.getElementById('game-message').textContent = data.game_server_response;
-                document.getElementById('chain-status').innerHTML = "✅ Reverse Proxy Nginx opérationnel : Front ➔ Back ➔ Serveur Web connectés avec succès !";
+                document.getElementById('chain-status').innerHTML = "Statut : Front -> Back -> Serveur Web connectes avec succes !";
             })
             .catch(err => {
-                document.getElementById('chain-status').innerHTML = "❌ Erreur de routage reverse proxy : " + err;
+                document.getElementById('chain-status').innerHTML = "Erreur de routage reverse proxy : " + err;
             });
     </script>
 </body>

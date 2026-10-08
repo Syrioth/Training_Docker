@@ -3,55 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projet Docker Cloud - Architecture Virtualisee</title>
+    <title>CloudGame Manager - Panel Administration</title>
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
+            --bg: #0b1120;
+            --card: #131d35;
+            --card-inner: #0f172a;
             --text: #f8fafc;
             --text-muted: #94a3b8;
             --accent: #38bdf8;
-            --nginx-green: #009639;
             --success: #10b981;
-            --border: #334155;
+            --border: #1e293b;
+            --border-bright: #334155;
+            --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: 'Consolas', 'Courier New', monospace;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             background-color: var(--bg);
             color: var(--text);
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 2rem;
-            line-height: 1.6;
+            font-family: var(--font);
+            padding: 1.5rem;
+            line-height: 1.5;
         }
         .container {
-            max-width: 900px;
+            max-width: 1100px;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
         }
         header {
-            margin-bottom: 2rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 1rem;
         }
-        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: #fff; }
-        .subtitle { color: var(--text-muted); font-size: 0.95rem; }
-        .badge-nginx {
-            background: rgba(0, 150, 57, 0.15);
-            color: #4ade80;
-            border: 1px solid var(--nginx-green);
-            padding: 0.3rem 0.8rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 700;
-        }
-        .grid {
-            display: grid;
-            gap: 1.25rem;
-            margin-bottom: 2rem;
+        .logo-area h1 { font-size: 1.4rem; font-weight: 700; color: #fff; }
+        .subtitle { color: var(--text-muted); font-size: 0.85rem; }
+        .tag-nginx {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 0.3rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: var(--font-mono);
         }
         .card {
             background: var(--card);
@@ -59,129 +62,330 @@
             border-radius: 8px;
             padding: 1.25rem;
         }
-        .card-header {
+        .card h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: #fff;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 0.75rem;
+        }
+        .service-box {
+            background: var(--card-inner);
+            border: 1px solid var(--border-bright);
+            border-radius: 6px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+        }
+        .service-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
+            font-weight: 700;
+            color: #fff;
         }
-        .badge {
-            background: rgba(56, 189, 248, 0.15);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-            padding: 0.2rem 0.6rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            font-family: monospace;
-        }
-        .msg-box {
-            background: #0f172a;
-            border: 1px solid var(--border);
-            padding: 0.75rem 1rem;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 0.95rem;
+        .status-pill {
+            background: rgba(16, 185, 129, 0.15);
             color: var(--success);
-        }
-        .meta-list {
-            list-style: none;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-top: 0.5rem;
-        }
-        .meta-list li { margin-bottom: 0.2rem; }
-        .chain-status {
-            background: rgba(16, 185, 129, 0.1);
             border: 1px solid var(--success);
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
             font-weight: 600;
-            color: var(--success);
         }
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+        }
+        .metric-row strong { color: var(--accent); font-family: var(--font-mono); }
+
+        /* Multi-games section */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1rem;
+            margin-top: 0.75rem;
+        }
+        .game-instance-card {
+            background: var(--card-inner);
+            border: 1px solid var(--border-bright);
+            border-radius: 6px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .game-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+        }
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.25rem;
+        }
+        .player-chip {
+            background: #1e293b;
+            border: 1px solid var(--border-bright);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+        .player-chip span { color: var(--accent); font-weight: 700; }
+
+        /* Admin form */
+        .admin-action-bar {
+            background: var(--card-inner);
+            border: 1px solid var(--border-bright);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        .admin-action-bar label { font-size: 0.85rem; color: var(--text-muted); }
+        .admin-action-bar select, .admin-action-bar input {
+            background: #0b1120;
+            border: 1px solid var(--border-bright);
+            color: #fff;
+            padding: 0.45rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .btn {
+            background: var(--accent);
+            color: #0b1120;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+
+        /* Terminal Logs */
+        .terminal {
+            background: #050811;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            height: 140px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            margin-top: 0.75rem;
+        }
+        .log-row { word-break: break-all; }
+        .log-info { color: var(--accent); }
+        .log-success { color: var(--success); }
+
         footer {
             text-align: center;
             color: var(--text-muted);
-            font-size: 0.85rem;
-            margin-top: 2rem;
+            font-size: 0.8rem;
+            padding: 1rem 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- HEADER PANEL ADMIN -->
         <header>
-            <div>
-                <h1>Projet Docker Cloud - Master 1</h1>
-                <p class="subtitle">Architecture virtualisee multi-conteneurs - 0 image Docker Hub</p>
+            <div class="logo-area">
+                <h1>CloudGame Manager - Panel d'Administration</h1>
+                <p class="subtitle">Supervision multi-jeux et orchestration de conteneurs Docker</p>
             </div>
-            <div class="badge-nginx">
-                Reverse Proxy Nginx Personnalise
+            <div class="tag-nginx">
+                Front Nginx : Reverse Proxy Actif (:8080)
             </div>
         </header>
 
-        <div class="grid">
-            <!-- 1. Front-End Nginx -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>1. Conteneur Front-End (Nginx Personnalise)</h2>
-                    <span class="badge">Port hote: 8080</span>
+        <!-- SECTION 1 : SUPERVISION CGROUPS & STATUT DES NOEUDS -->
+        <section class="card">
+            <h2>1. Supervision de l'Infrastructure Cloud & Quotas Cgroups</h2>
+            <span class="subtitle">Isolation stricte des ressources par conteneur et monitoring de sante</span>
+            
+            <div class="grid-3">
+                <!-- Noeud Front -->
+                <div class="service-box">
+                    <div class="service-header">
+                        <span>front-dashboard</span>
+                        <span class="status-pill" id="st-front">En ligne</span>
+                    </div>
+                    <div class="metric-row"><span>Service :</span><span>Reverse Proxy Nginx</span></div>
+                    <div class="metric-row"><span>Port hote / interne :</span><strong>8080:8080</strong></div>
+                    <div class="metric-row"><span>Quota CPU :</span><strong>0.25 core</strong></div>
+                    <div class="metric-row"><span>Quota RAM :</span><strong>64 Mo (32 Mo reserve)</strong></div>
+                    <div class="metric-row"><span>Securite OS :</span><span>frontuser (UID 1003)</span></div>
                 </div>
-                <div class="msg-box">Hello World from Front-End Nginx Container!</div>
-                <ul class="meta-list">
-                    <li>- Role : Serveur Web HTTP & Reverse Proxy (Alpine 3.20 + Nginx)</li>
-                    <li>- Quota Cgroups : 0.25 CPU | 64 Mo RAM (non-root: frontuser UID 1003)</li>
-                    <li>- Routage interne : /api/ -> proxy_pass vers http://back:8081/</li>
-                </ul>
+
+                <!-- Noeud Back -->
+                <div class="service-box">
+                    <div class="service-header">
+                        <span>back-api</span>
+                        <span class="status-pill" id="st-back">En ligne</span>
+                    </div>
+                    <div class="metric-row"><span>Service :</span><span>API Orchestrateur Python</span></div>
+                    <div class="metric-row"><span>Port hote / interne :</span><strong>8081:8081</strong></div>
+                    <div class="metric-row"><span>Quota CPU :</span><strong>0.50 core</strong></div>
+                    <div class="metric-row"><span>Quota RAM :</span><strong>128 Mo (64 Mo reserve)</strong></div>
+                    <div class="metric-row"><span>Securite OS :</span><span>backuser (UID 1002)</span></div>
+                </div>
+
+                <!-- Noeud Game Server -->
+                <div class="service-box">
+                    <div class="service-header">
+                        <span>game-server</span>
+                        <span class="status-pill" id="st-game">En ligne</span>
+                    </div>
+                    <div class="metric-row"><span>Service :</span><span>Moteur Serveur de Jeux</span></div>
+                    <div class="metric-row"><span>Port hote / interne :</span><strong>8082:8082</strong></div>
+                    <div class="metric-row"><span>Quota CPU :</span><strong>0.50 core</strong></div>
+                    <div class="metric-row"><span>Quota RAM :</span><strong>128 Mo (64 Mo reserve)</strong></div>
+                    <div class="metric-row"><span>Securite OS :</span><span>gameuser (UID 1001)</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2 : GESTION MULTI-JEUX & SESSIONS ACTIVES -->
+        <section class="card">
+            <h2>2. Instances Multi-Jeux & Sessions en Temps Reel</h2>
+            <span class="subtitle">Sessions de jeu hebergees en memoire sur le conteneur game-server</span>
+
+            <div class="games-grid" id="games-container">
+                <div style="color: var(--text-muted); font-size: 0.85rem;">Chargement des sessions de jeux...</div>
             </div>
 
-            <!-- 2. Back-End API -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>2. Conteneur Back-End API</h2>
-                    <span class="badge">Port hote: 8081</span>
-                </div>
-                <div class="msg-box" id="back-message">Interrogation du reverse proxy /api/...</div>
-                <ul class="meta-list">
-                    <li>- Role : Passerelle API & Orchestration (Python 3)</li>
-                    <li>- Quota Cgroups : 0.50 CPU | 128 Mo RAM (non-root: backuser UID 1002)</li>
-                </ul>
+            <!-- Formulaire d'action d'administration -->
+            <div class="admin-action-bar">
+                <label>Pilotage Admin :</label>
+                <select id="action-session-select">
+                    <option value="game-session-01">Session 01 : PixelQuest</option>
+                    <option value="game-session-02">Session 02 : CyberArena</option>
+                </select>
+                <input type="text" id="action-player-input" placeholder="Pseudo joueur" value="Joueur_Test">
+                <input type="number" id="action-points-input" value="50" style="width: 80px;" min="10" max="500">
+                <button class="btn" id="btn-admin-action">Transmettre Commande Admin</button>
             </div>
+        </section>
 
-            <!-- 3. Serveur Web / Jeu -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>3. Conteneur Serveur Web Specialise</h2>
-                    <span class="badge">Port hote: 8082</span>
-                </div>
-                <div class="msg-box" id="game-message">En attente de transmission...</div>
-                <ul class="meta-list">
-                    <li>- Role : Serveur Web Specialise Coeur de Donnees (Python 3)</li>
-                    <li>- Quota Cgroups : 0.50 CPU | 128 Mo RAM (non-root: gameuser UID 1001)</li>
-                </ul>
+        <!-- SECTION 3 : JOURNAL SOC & FLUX RESEAU -->
+        <section class="card">
+            <h2>3. Journal des Requetes Inter-Conteneurs & Signaux</h2>
+            <span class="subtitle">Tracabilite des flux via Nginx (Reverse Proxy) et preuve de gestion des signaux SIGTERM</span>
+            <div class="terminal" id="terminal-logs">
+                <div class="log-row log-info">[SYSTEM] Initialisation de la console d'administration...</div>
             </div>
-        </div>
-
-        <div class="chain-status" id="chain-status">
-            Verification du Reverse Proxy Nginx et de la chaine inter-conteneurs...
-        </div>
+        </section>
 
         <footer>
-            TP Docker Cloud - Reverse Proxy Nginx - Ordonnancement par Healthcheck - Arret gracieux SIGQUIT/SIGTERM
+            Projet Docker Cloud - Master 1 - Panel Admin Nginx - API Orchestrateur - Moteur Multi-Jeux
         </footer>
     </div>
 
     <script>
-        fetch('/api/')
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('back-message').textContent = data.message;
-                document.getElementById('game-message').textContent = data.game_server_response;
-                document.getElementById('chain-status').innerHTML = "Statut : Front -> Back -> Serveur Web connectes avec succes !";
-            })
-            .catch(err => {
-                document.getElementById('chain-status').innerHTML = "Erreur de routage reverse proxy : " + err;
-            });
+        function logMsg(msg, type = 'info') {
+            const term = document.getElementById('terminal-logs');
+            if (!term) return;
+            const row = document.createElement('div');
+            row.className = `log-row log-${type}`;
+            const time = new Date().toLocaleTimeString();
+            row.textContent = `[${time}] ${msg}`;
+            term.appendChild(row);
+            term.scrollTop = term.scrollHeight;
+        }
+
+        async function loadGameSessions() {
+            try {
+                // Appel via le Reverse Proxy Nginx : /api/admin/games -> route vers http://back:8081/admin/games
+                const resp = await fetch('/api/admin/games');
+                if (!resp.ok) throw new Error("HTTP " + resp.status);
+                const data = await resp.json();
+
+                const container = document.getElementById('games-container');
+                if (!container || !data.instances) return;
+
+                container.innerHTML = '';
+                for (const [sId, inst] of Object.entries(data.instances)) {
+                    const card = document.createElement('div');
+                    card.className = 'game-instance-card';
+
+                    let chipsHtml = '';
+                    for (const [p, score] of Object.entries(inst.scores || {})) {
+                        chipsHtml += `<span class="player-chip">${p} : <span>${score} pts</span></span>`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="game-title">
+                            <span>${inst.title}</span>
+                            <span class="status-pill">${inst.status}</span>
+                        </div>
+                        <div class="metric-row"><span>ID Session :</span><span>${sId}</span></div>
+                        <div class="metric-row"><span>Genre / Type :</span><span>${inst.genre}</span></div>
+                        <div class="metric-row"><span>Capacite :</span><span>${inst.active_players.length} / ${inst.max_players} joueurs</span></div>
+                        <div class="metric-row"><span>Frequence tick :</span><span>${inst.tick_rate} Hz</span></div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Joueurs & Scores actifs :</div>
+                        <div class="chips-container">${chipsHtml || 'Aucun joueur'}</div>
+                    `;
+                    container.appendChild(card);
+                }
+            } catch (err) {
+                logMsg("Erreur lors de l'interrogation des sessions : " + err.message, "info");
+            }
+        }
+
+        document.getElementById('btn-admin-action')?.addEventListener('click', async () => {
+            const sId = document.getElementById('action-session-select').value;
+            const player = document.getElementById('action-player-input').value.trim() || 'Admin_User';
+            const points = parseInt(document.getElementById('action-points-input').value, 10) || 50;
+
+            logMsg(`Envoi action admin [${sId}] : Attribution de ${points} pts a ${player}...`, 'info');
+
+            try {
+                const resp = await fetch('/api/admin/action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sId, player: player, points: points })
+                });
+                const res = await resp.json();
+                if (resp.ok) {
+                    logMsg(`Succes : Session mise a jour sur le game-server.`, 'success');
+                    loadGameSessions();
+                } else {
+                    logMsg(`Erreur : ${res.error}`, 'info');
+                }
+            } catch (e) {
+                logMsg(`Erreur reseau : ${e.message}`, 'info');
+            }
+        });
+
+        loadGameSessions();
+        setInterval(loadGameSessions, 5000);
+        logMsg("Liaison etablie : Front Nginx (:8080) -> Back API (:8081) -> Game-Server (:8082).", "success");
     </script>
 </body>
 </html>

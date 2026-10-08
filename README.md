@@ -1,16 +1,15 @@
-# Projet Docker Cloud - Rendu TP Master 1 Informatique
+# Projet Docker Cloud - CloudGame Manager (Master 1)
 
-Projet de virtualisation et d'orchestration multi-conteneurs base sur Docker.
+Architecture virtualisee 3-tiers multi-conteneurs d'orchestration et de supervision de serveurs de jeux.
 
 Conformement aux consignes et au bareme d'evaluation :
-- **0 image issue de Docker Hub** : Toutes les images sont personnalisees via leur propre `Dockerfile` (y compris le Front Nginx, compile et configure sur base Alpine).
+- **0 image issue de Docker Hub** : Toutes les images sont personnalisees via leur propre `Dockerfile` (y compris le Front Nginx, compile et configure sur Alpine).
 - **3 types d'images distinctes** : 
-  1. **Front-End Nginx** (Serveur Web & Reverse Proxy)
-  2. **Back-End API** (Passerelle REST Python 3)
-  3. **Serveur Web Specialise** (Serveur de jeu / Coeur de donnees Python 3)
-- **Code Hello World epure** : Demontre la chaine complete de communication reseau sans surcharge inutile.
+  1. **Front-End (Nginx)** : Panel d'administration et reverse proxy supervisant l'infrastructure et les parties en direct.
+  2. **Back-End (Python 3)** : API Gateway et orchestrateur routant les flux d'administration.
+  3. **Serveur de Jeux (Python 3)** : Moteur de jeux multi-sessions hebergeant l'etat des parties, joueurs et scores en memoire.
 - **Ressources cgroups contraintes** : Quotas stricts de CPU et de memoire alloues a chaque conteneur.
-- **Arret gracieux gere** : Signaux POSIX (`SIGQUIT` pour Nginx, `SIGTERM` pour Python) sous PID 1.
+- **Arret gracieux gere** : Signaux POSIX (`SIGQUIT` pour Nginx, `SIGTERM` pour Python) sous PID 1 avec sauvegarde d'etat en memoire.
 - **Ordonnancement sequentiel** : Utilisation des `healthcheck` et de `depends_on (condition: service_healthy)`.
 
 ---
@@ -21,11 +20,11 @@ Le fichier `architecture.mermaid` contient la description textuelle formalisee d
 
 ### A quoi sert-il ?
 1. **Rendu natif sur GitHub et GitLab** :
-   GitHub et GitLab interpretent nativement les blocs Mermaid. Lors de la consultation du depot sur GitHub, le fichier et le bloc ci-dessous sont automatiquement convertis en un diagramme vectoriel interactif, sans avoir besoin d'exporter une image manuellement.
+   GitHub et GitLab interpretent nativement ce format textuel pour afficher un diagramme vectoriel clair directement dans l'interface web, sans dependre d'une image statique.
 2. **Architecture as Code (Documentation versionnee)** :
-   Plutot qu'une simple image binaire difficilement modifiable, le schema est ecrit en texte brut. Toute modification de l'infrastructure (changement de port, ajout d'un service, modification d'un quota) est tracable et versionnable via Git avec un diff lisible.
-3. **Reponse au bareme du TP** :
-   Ce fichier remplit directement le critere *"Schema des communications /1"* exige dans le sujet.
+   Le schema est ecrit en code brut. Toute evolution reseau ou d'allocation de ressources est historisee et lisible dans Git.
+3. **Reponse directe au bareme du TP** :
+   Ce fichier repond au critere *"Schema des communications /1"* exige dans le sujet.
 
 ---
 
@@ -39,8 +38,8 @@ Le fichier `architecture.mermaid` contient la description textuelle formalisee d
 | **Explication des arguments attendus (/1)** | Arguments au build (`ARG DEFAULT_PORT`) et arguments au run sous forme de variables d'environnement (`PORT`, `SERVICE_NAME`, `GAME_SERVER_URL`, `PYTHONUNBUFFERED=1`). |
 | **Explications sur les entrypoints choisis (/1)** | Syntaxe **Exec Form** : `ENTRYPOINT ["nginx"]` pour le front (avec `daemon off;` dans `nginx.conf`) et `ENTRYPOINT ["python3", "app.py"]` pour le back. Les executables tournent directement en **PID 1**, sans sous-shell `/bin/sh -c`, interceptant immediatement les signaux d'arret emis par Docker. |
 | **Arguments traduits dans Docker Compose (/1)** | Fichier `.env` mappe directement dans les sections `environment:`, `ports:` et `deploy.resources` de `docker-compose.yml`. |
-| **Limitation des ressources de chaque conteneur (/1)** | Quotas cgroups definis dans `deploy.resources.limits` : **Front (Nginx)** : 0.25 CPU / 64 Mo RAM (tres faible empreinte memoire) - **Back** : 0.50 CPU / 128 Mo RAM - **Serveur Web / Jeu** : 0.50 CPU / 128 Mo RAM. |
-| **Les SIGTERM / SIGQUIT sont geres (/1)** | Nginx configure avec `STOPSIGNAL SIGQUIT` (fermeture gracieuse des workers apres traitement des requetes en cours). Les services Python capturent `SIGTERM`. Arret immediat sans timeout brutal `SIGKILL`. Code de sortie : 0. |
+| **Limitation des ressources de chaque conteneur (/1)** | Quotas cgroups definis dans `deploy.resources.limits` : **Front (Nginx)** : 0.25 CPU / 64 Mo RAM - **Back** : 0.50 CPU / 128 Mo RAM - **Serveur Web / Jeu** : 0.50 CPU / 128 Mo RAM. |
+| **Les SIGTERM / SIGQUIT sont geres (/1)** | Nginx configure avec `STOPSIGNAL SIGQUIT` (fermeture gracieuse des workers apres traitement des requetes en cours). Les services Python capturent `SIGTERM` pour sauvegarder l'etat des sessions de jeu avant sortie propre avec exit code 0. |
 | **Dependances & Ordre de demarrage (/1)** | Ordonnancement sequentiel garanti : `game-server` (Healthcheck OK) -> `back` (demarre une fois game-server `healthy`) -> `front` (demarre une fois back `healthy`). |
 | **Schema des communications (/1)** | Schema vectoriel SVG (`architecture.svg`) et diagramme Mermaid ci-dessous. |
 
@@ -50,25 +49,25 @@ Le fichier `architecture.mermaid` contient la description textuelle formalisee d
 
 ```mermaid
 flowchart TD
-    subgraph MachineHote["Machine Hote (Navigateur / Client)"]
-        Browser["Navigateur Web (http://localhost:8080)"]
+    subgraph MachineHote["Machine Hote (Navigateur / Administrateur)"]
+        Browser["Panel Admin Web (http://localhost:8080)"]
     end
 
     subgraph ReseauDocker["Reseau Isole Docker Bridge : docker_cloud_net"]
         subgraph FrontContainer["Conteneur : cloud_front_dashboard"]
-            Front["front : Nginx Custom (Port 8080)<br/>User non-root: frontuser (1003)<br/>Limites : 0.25 CPU | 64 Mo RAM<br/>Reverse Proxy : /api/ -> back:8081"]
+            Front["front : Panel Admin Nginx (Port 8080)<br/>User non-root: frontuser (1003)<br/>Limites : 0.25 CPU | 64 Mo RAM<br/>Reverse Proxy : /api/ -> back:8081"]
         end
 
         subgraph BackContainer["Conteneur : cloud_back_api"]
-            Back["back : API Python (Port 8081)<br/>User non-root: backuser (1002)<br/>Limites : 0.50 CPU | 128 Mo RAM"]
+            Back["back : API Orchestrateur (Port 8081)<br/>User non-root: backuser (1002)<br/>Limites : 0.50 CPU | 128 Mo RAM"]
         end
 
         subgraph GameContainer["Conteneur : cloud_game_server"]
-            Game["game-server : Web Server Python (Port 8082)<br/>User non-root: gameuser (1001)<br/>Limites : 0.50 CPU | 128 Mo RAM"]
+            Game["game-server : Moteur Multi-Jeux (Port 8082)<br/>User non-root: gameuser (1001)<br/>Limites : 0.50 CPU | 128 Mo RAM"]
         end
     end
 
-    Browser -->|"1. Acces Web :8080"| Front
+    Browser -->|"1. Acces Panel :8080"| Front
     Front -->|"2. proxy_pass /api/ (Interne :8081)"| Back
     Back -->|"3. HTTP Interne : http://game-server:8082"| Game
 
@@ -78,7 +77,7 @@ flowchart TD
 
 ---
 
-## 4. Guide d'Execution
+## 4. Guide d'Execution Rapide
 
 ### 1. Construire les images personnalisees
 ```bash
@@ -90,13 +89,13 @@ docker compose build
 docker compose up -d
 ```
 
-### 3. Tester dans le navigateur
+### 3. Acceder au Panel d'Administration
 Ouvrez votre navigateur sur : [http://localhost:8080](http://localhost:8080)
 
-Le conteneur **Front Nginx** sert l'interface et relaie automatiquement la requete via sa directive `proxy_pass` vers l'API backend et le serveur de jeu :
-- **Front Nginx** : `Hello World from Front-End Nginx Container!`
-- **Back API** : `Hello World from Back-End API!`
-- **Serveur Web / Jeu** : `Hello World from Game Web Server!`
+Le Panel Admin permet de visualiser :
+- L'etat de sante et les quotas de ressources de chaque conteneur.
+- Les instances de jeux multi-sessions en cours d'execution (`PixelQuest`, `CyberArena`).
+- La transmission en direct d'actions d'administration (attribution de points, enregistrement de joueurs).
 
 ### 4. Verifier les limitations de ressources cgroups
 ```powershell
@@ -104,9 +103,8 @@ docker inspect cloud_front_dashboard --format 'Memory={{.HostConfig.Memory}} Nan
 docker inspect cloud_game_server --format 'Memory={{.HostConfig.Memory}} NanoCpus={{.HostConfig.NanoCPUs}}'
 ```
 
-### 5. Verifier l'arret gracieux
+### 5. Verifier l'arret gracieux SIGTERM
 ```powershell
-docker stop cloud_front_dashboard
 docker stop cloud_game_server
 docker logs cloud_game_server --tail 5
 ```

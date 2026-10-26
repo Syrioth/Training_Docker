@@ -67,11 +67,14 @@ class BackendRequestHandler(BaseHTTPRequestHandler):
                 "role": "Orchestrateur & API Gateway",
                 "status": "operational",
                 "uptime_seconds": round(time.time() - START_TIME, 2),
+                "worker_node": os.environ.get("HOSTNAME", f"worker-{os.getpid()}"),
                 "game_server_status": "healthy" if game_code == 200 else "unreachable",
                 "pid": os.getpid()
             })
         elif path in ["/admin/games", "/api/admin/games"]:
             data, code = self._call_game_server("/api/admin/games")
+            if isinstance(data, dict):
+                data["handled_by_worker"] = os.environ.get("HOSTNAME", f"worker-{os.getpid()}")
             self._send_json(code, data)
         else:
             self._send_json(404, {"error": f"Endpoint introuvable : {path}"})
@@ -87,6 +90,8 @@ class BackendRequestHandler(BaseHTTPRequestHandler):
 
         if path in ["/admin/action", "/api/admin/action"]:
             data, code = self._call_game_server("/api/admin/action", method="POST", payload=payload)
+            if isinstance(data, dict):
+                data["handled_by_worker"] = os.environ.get("HOSTNAME", f"worker-{os.getpid()}")
             self._send_json(code, data)
         else:
             self._send_json(404, {"error": f"Endpoint POST introuvable : {path}"})

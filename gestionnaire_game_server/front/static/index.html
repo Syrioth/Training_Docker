@@ -273,7 +273,7 @@
                         <span class="status-pill" id="st-back">En ligne</span>
                     </div>
                     <div class="metric-row"><span>Service :</span><span>API Orchestrateur Python</span></div>
-                    <div class="metric-row"><span>Port hote / interne :</span><strong>8081:8081</strong></div>
+                    <div class="metric-row"><span>Worker actif :</span><strong id="back-worker-id" style="color: var(--accent);">Initialisation...</strong></div>
                     <div class="metric-row"><span>Quota CPU :</span><strong>0.50 core</strong></div>
                     <div class="metric-row"><span>Quota RAM :</span><strong>128 Mo (64 Mo reserve)</strong></div>
                     <div class="metric-row"><span>Securite OS :</span><span>backuser (UID 1002)</span></div>
@@ -373,6 +373,14 @@
                 const resp = await fetch('/api/admin/games');
                 if (!resp.ok) throw new Error("HTTP " + resp.status);
                 const data = await resp.json();
+
+                if (data.handled_by_worker) {
+                    const el = document.getElementById('back-worker-id');
+                    if (el && el.textContent !== data.handled_by_worker) {
+                        el.textContent = data.handled_by_worker;
+                        logMsg("Requete traitee par le replica API : " + data.handled_by_worker, "info");
+                    }
+                }
 
                 const container = document.getElementById('games-container');
                 if (!container || !data.instances) return;

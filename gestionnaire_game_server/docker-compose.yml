@@ -10,6 +10,7 @@ services:
   # Démarre en premier (1ère position). Fournit son service web Hello World.
   # ----------------------------------------------------------------------------
   game-server:
+    image: cloud-game-server:latest
     build:
       context: ./game-server
       dockerfile: Dockerfile
@@ -47,6 +48,7 @@ services:
   # Démarre en 2ème position dès que game-server est sain (healthy).
   # ----------------------------------------------------------------------------
   back:
+    image: cloud-back:latest
     build:
       context: ./back
       dockerfile: Dockerfile
@@ -88,6 +90,7 @@ services:
   # Démarre en 3ème position dès que back-api est sain (healthy).
   # ----------------------------------------------------------------------------
   front:
+    image: cloud-front:latest
     build:
       context: ./front
       dockerfile: Dockerfile

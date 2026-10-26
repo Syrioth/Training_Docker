@@ -1,0 +1,82 @@
+version: "3.9"
+
+# ==============================================================================
+# PROJET DOCKER CLOUD - DEPLOIEMENT EN STACK CLUSTER DOCKER SWARM
+# Architecture a 3 tiers avec scaling horizontal du backend (3 replicas)
+# ==============================================================================
+
+services:
+
+  # 1. SERVEUR DE JEUX MULTI-SESSIONS
+  game-server:
+    image: cloud-game-server:latest
+    environment:
+      - PORT=8082
+      - SERVICE_NAME=game-web-server
+      - PYTHONUNBUFFERED=1
+    networks:
+      - cloud-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+
+  # 2. BACK-END : API ORCHESTRATEUR SCALABLE (3 REPLICAS)
+  back:
+    image: cloud-back:latest
+    environment:
+      - PORT=8081
+      - SERVICE_NAME=backend-core-api
+      - GAME_SERVER_URL=http://game-server:8082
+      - PYTHONUNBUFFERED=1
+    networks:
+      - cloud-network
+    deploy:
+      replicas: 3
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 5s
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+
+  # 3. FRONT-END : REVERSE PROXY NGINX (POINT D'ENTREE CLUSTER)
+  front:
+    image: cloud-front:latest
+    ports:
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: ingress
+    networks:
+      - cloud-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
+
+networks:
+  cloud-network:
+    driver: overlay
+    attachable: true

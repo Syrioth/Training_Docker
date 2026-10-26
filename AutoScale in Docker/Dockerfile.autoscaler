@@ -1,0 +1,9 @@
+FROM alpine:3.18
+
+RUN apk add --no-cache docker-cli bash curl
+
+COPY autoscale.sh /autoscale.sh
+
+RUN chmod +x /autoscale.sh
+
+CMD ["/autoscale.sh"]

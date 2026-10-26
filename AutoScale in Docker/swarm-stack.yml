@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  web:
+    # image: busybox
+    # command: sh -c "while true; do :; done"
+    image: nginx:alpine
+
+    # 🔥 SWARM TEMPLATE: rendered per task
+    configs:
+      - source: nginx_conf
+        target: /etc/nginx/conf.d/default.conf
+
+    ports:
+      - target: 80
+        published: 8080
+        protocol: tcp
+        mode: ingress # 🔥 SWARM routing mesh
+
+    deploy:
+      replicas: 1 # 🔥 SWARM scaling
+
+      resources:
+        reservations: # 🔥 SWARM scheduling
+          cpus: "0.10"
+          memory: 64M
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
+      update_config: # 🔥 SWARM rolling updates
+        parallelism: 1
+        delay: 3s
+
+      endpoint_mode: vip # 🔥 SWARM load balancer
+
+  autoscaler:
+    image: autoscaler:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.autoscaler
+    deploy:
+      mode: global # one per manager node
+      placement:
+        constraints:
+          - node.role == manager # only run on manager nodes
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+configs:
+  nginx_conf:
+    # 🔥 SWARM TEMPLATE VARIABLES
+    file: ./nginx.conf
+    template_driver: golang # 🔥 THIS is the missing piece
+

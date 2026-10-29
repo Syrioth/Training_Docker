@@ -120,6 +120,30 @@ services:
       retries: 3
       start_period: 2s
 
+  # ----------------------------------------------------------------------------
+  # 4. SERVICE DE TEST AUTOMATISE (CI/CD)
+  # Valide les flux de bout en bout des que le front est sain (healthy)
+  # ----------------------------------------------------------------------------
+  integration-tests:
+    image: cloud-tester:latest
+    build:
+      context: ./tests
+      dockerfile: Dockerfile
+    container_name: cloud_integration_tests
+    environment:
+      - FRONT_URL=http://front:8080
+    networks:
+      - cloud-network
+    depends_on:
+      front:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+    restart: "no"
+
 # ------------------------------------------------------------------------------
 # Réseau isolé bridge
 # ------------------------------------------------------------------------------

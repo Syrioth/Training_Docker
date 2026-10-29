@@ -118,6 +118,12 @@ docker compose up -d
 docker compose ps
 ```
 
+### Execution des tests d'integration automatises (CI/CD)
+Un conteneur de test dedie (`cloud-tester`) permet de valider automatiquement les routes et la communication inter-conteneurs de bout en bout :
+```bash
+docker compose run --rm integration-tests
+```
+
 ### Mode 2 : Deploiement en Cluster Scalable (Docker Swarm)
 L'infrastructure permet de multiplier dynamiquement les instances de l'API Back-End derriere le reverse proxy :
 ```bash

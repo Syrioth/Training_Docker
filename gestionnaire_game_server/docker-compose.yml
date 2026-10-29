@@ -144,6 +144,23 @@ services:
           memory: 64M
     restart: "no"
 
+  # ----------------------------------------------------------------------------
+  # 5. CONTROLEUR D'AUTOSCALING DYNAMIQUE (SWARM / HPA)
+  # ----------------------------------------------------------------------------
+  autoscaler:
+    image: cloud-autoscaler:latest
+    build:
+      context: ./autoscaler
+      dockerfile: Dockerfile
+    container_name: cloud_autoscaler
+    environment:
+      - STACK_NAME=cloud_game
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - cloud-network
+    profiles: ["swarm", "scaling"]
+
 # ------------------------------------------------------------------------------
 # Réseau isolé bridge
 # ------------------------------------------------------------------------------

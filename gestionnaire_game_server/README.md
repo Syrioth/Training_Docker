@@ -138,9 +138,12 @@ docker stack services cloud_game
 
 # 4. Scaler dynamiquement a 5 instances
 docker service scale cloud_game_back=5
+
+# 5. Suivre le controleur d'autoscaling autonome en direct
+docker service logs -f cloud_game_autoscaler
 ```
 
-L'interface web accessible sur `http://localhost:8080` affiche en temps reel quel replica (`worker_node`) a pris en charge chaque requete.
+L'interface web accessible sur `http://localhost:8080` affiche en temps reel quel replica (`worker_node`) a pris en charge chaque requete. Le conteneur `autoscaler` surveille la charge CPU et ajuste automatiquement le nombre d'instances en cas de pic de trafic.
 
 ### Verification des limitations de ressources cgroups
 ```powershell
